@@ -3,9 +3,6 @@ name = "shinedigitalstore-1"
 main = "functions/api.js"
 compatibility_date = "2024-01-01"
 
-# ☁️ Cloudflare Account configuration
-account_id = "7fbda3c1618c13e1e0f9c4a7adbb2e4e"
-
 # 1️⃣ D1 Database ချိတ်ဆက်မှု
 [[d1_databases]]
 binding = "DB"
