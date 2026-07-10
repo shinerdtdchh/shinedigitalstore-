@@ -2,6 +2,9 @@
 name = "shinedigitalstore-1"
 compatibility_date = "2024-01-01"
 
+# 🧠 ပင်မ Worker script (ဦးနှောက်) ကို ပြန်လည်သတ်မှတ်ခြင်း
+main = "functions/api.js"
+
 # 1️⃣ D1 Database ချိတ်ဆက်မှု
 [[d1_databases]]
 binding = "DB"
@@ -13,7 +16,6 @@ database_id = "7fbda3c1-618c-13e1-e0f9-c4a7adb56c64"
 binding = "SHINE_MEDIA"
 bucket_name = "shine-media"
 
-# 3️⃣ Static Assets နှင့် Cloudflare Pages စနစ်သစ် ပုံစံပြောင်းခြင်း
+# 3️⃣ Static Assets နေရာ
 [assets]
 directory = "./"
-binding = "ASSETS"
