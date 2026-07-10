@@ -1,0 +1,271 @@
+<?php
+@ini_set('upload_max_filesize', '150M');
+@ini_set('post_max_size', '150M');
+@ini_set('max_file_uploads', '50'); 
+@ini_set('max_execution_time', '300');
+
+include('db.php');
+session_start();
+
+if (!isset($_SESSION['username']) || $_SESSION['username'] !== 'owner') {
+    header("Location: login.php");
+    exit();
+}
+
+$target_user = isset($_GET['user']) ? $_GET['user'] : '';
+
+if(empty($target_user)) {
+    die("<div style='color:white; background:#020617; text-align:center; padding-top:50px;'>မည်သည့် ဝယ်သူနှင့် စကားပြောမည်ကို ရွေးချယ်ပေးပါ (?user=username)</div>");
+}
+
+if (file_exists(__DIR__ . '/vendor/autoload.php')) {
+    require_once __DIR__ . '/vendor/autoload.php';
+}
+$options = array('cluster' => 'ap1', 'useTLS' => true);
+$pusher = new Pusher\Pusher('0b5fa17e7ce3f90eee04', 'aee0783627dc796af329', '2174388', $options);
+
+if (isset($_GET['fetch_chat'])) {
+    $chat_history = cf_d1_query("SELECT * FROM chat_messages WHERE (sender='owner' AND receiver='$target_user') OR (sender='$target_user' AND receiver='owner') ORDER BY id ASC");
+    
+    if($chat_history) {
+        $total = count($chat_history);
+        for ($i = 0; $i < $total; $i++) {
+            $msg = $chat_history[$i];
+            $is_me = ($msg['sender'] === 'owner');
+            $bg_color = $is_me ? 'bg-blue-600 self-end text-right rounded-tr-none text-white' : 'bg-slate-900 border border-slate-800/80 self-start text-left rounded-tl-none text-slate-200';
+            
+            if (!empty($msg['media_url']) || strpos($msg['message'], 'http') !== false) {
+                $media_url = !empty($msg['media_url']) ? $msg['media_url'] : $msg['message'];
+                $media_group = [$media_url];
+                $current_batch = isset($msg['batch_id']) ? $msg['batch_id'] : '';
+                
+                if(!empty($current_batch)) {
+                    while (($i + 1) < $total && isset($chat_history[$i+1]['batch_id']) && $chat_history[$i+1]['batch_id'] === $current_batch && $chat_history[$i+1]['sender'] === $msg['sender']) {
+                        $i++;
+                        $media_group[] = !empty($chat_history[$i]['media_url']) ? $chat_history[$i]['media_url'] : $chat_history[$i]['message'];
+                    }
+                }
+
+                $count = count($media_group);
+                $grid_cols = 'grid-cols-1';
+                $max_w = 'max-w-[250px]'; 
+
+                if ($count == 2) { $grid_cols = 'grid-cols-2'; $max_w = 'max-w-[290px]'; }
+                elseif ($count == 3) { $grid_cols = 'grid-cols-3'; $max_w = 'max-w-[340px]'; }
+                elseif ($count >= 4) { $grid_cols = 'grid-cols-2'; $max_w = 'max-w-[320px]'; }
+
+                $align_self = $is_me ? 'self-end' : 'self-start';
+                
+                echo "<div class='{$max_w} p-1 rounded-2xl shadow-md bg-slate-900/40 border border-slate-800/30 {$align_self}'>";
+                echo "<div class='grid {$grid_cols} gap-1 overflow-hidden rounded-xl'>";
+                
+                foreach ($media_group as $media) {
+                    if (strpos($media, '.mp4') !== false || strpos($media, '.webm') !== false || strpos($media, '.mov') !== false) {
+                        echo "<video src='".htmlspecialchars($media)."' controls class='w-full h-auto rounded-lg'></video>";
+                    } else {
+                        $img_style = ($count > 1) ? "style='width:100%; height:145px; object-fit:cover;'" : "style='width:100%; max-height:250px; object-fit:contain;'";
+                        echo "<img src='".htmlspecialchars($media)."' {$img_style} class='rounded-lg shadow-sm' onclick='window.open(this.src)' style='cursor:pointer;'>";
+                    }
+                }
+                echo "</div>";
+                echo "<div class='text-[8px] opacity-40 flex justify-end items-center px-1.5 mt-1'>";
+                echo "<span>".date('h:i A', strtotime($msg['created_at']))."</span>";
+                echo "</div>";
+                echo "</div>";
+            } 
+            else {
+                echo "<div class='max-w-[85%] p-3.5 rounded-2xl text-xs break-all shadow-md {$bg_color}'>";
+                echo "<p class='leading-relaxed text-[13px]'>".htmlspecialchars($msg['message'])."</p>";
+                echo "<div class='text-[8px] opacity-40 flex justify-end items-center mt-1.5'>";
+                echo "<span>".date('h:i A', strtotime($msg['created_at']))."</span>";
+                echo "</div>";
+                echo "</div>";
+            }
+        }
+    }
+    exit();
+}
+
+if (isset($_POST['owner_typing'])) {
+    $pusher->trigger('chat-channel-' . $target_user, 'typing-event', array('typing' => true, 'sender' => 'owner'));
+    echo "typing_logged";
+    exit();
+}
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Owner Dashboard - Shine Store</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://js.pusher.com/8.0.1/pusher.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Outfit', sans-serif; background: #020617; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="text-white flex items-center justify-center min-h-screen w-full overflow-hidden">
+
+    <div class="w-full h-screen max-w-lg flex flex-col bg-slate-950/40 border-x border-slate-900/80 relative">
+        
+        <div class="text-center pt-5 pb-3 border-b border-slate-900/80 shrink-0 bg-slate-950/80 backdrop-blur-md">
+            <h1 class="text-base font-black text-red-500 uppercase tracking-widest italic">Owner Console</h1>
+            <p class="text-[10px] text-slate-400">Chatting with: <span class="text-blue-400 font-bold"><?php echo htmlspecialchars($target_user); ?></span></p>
+        </div>
+        
+        <div id="chat_scroll_box" class="flex-1 overflow-y-auto space-y-3.5 p-4 bg-slate-950/20 flex flex-col scrollbar-hide relative"></div>
+        
+        <div id="typing_box" class="px-4 py-1.5 bg-slate-950/80 backdrop-blur-sm border-t border-slate-900/40 shrink-0 hidden">
+            <div class="flex items-center gap-2">
+                <span class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-bounce"></span>
+                <span class="text-[10px] font-bold tracking-wider text-blue-400 uppercase">Customer is typing...</span>
+            </div>
+        </div>
+
+        <form id="chatForm" class="flex gap-2 p-3 border-t border-slate-900/60 bg-slate-950/90 backdrop-blur-md items-center shrink-0" onsubmit="sendChat(event)" enctype="multipart/form-data">
+            <input type="file" id="chat_file_input" name="chat_files[]" accept="image/*,video/*" multiple class="hidden" onchange="triggerFileSend()">
+            
+            <button type="button" onclick="document.getElementById('chat_file_input').click()" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 p-3.5 rounded-2xl text-slate-400 hover:text-blue-400 shrink-0 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>
+            </button>
+            <input type="text" id="owner_chat_msg" oninput="notifyTyping()" placeholder="ဝယ်သူထံ စာပြန်ရန်..." class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-3 text-xs outline-none focus:border-red-500/80 text-white font-medium" autocomplete="off">
+            <button type="submit" class="bg-red-600 px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-wider text-white">REPLY</button>
+        </form>
+    </div>
+
+    <script>
+        const chatBox = document.getElementById('chat_scroll_box');
+        let shouldScroll = true;
+        const target_user = '<?php echo $target_user; ?>';
+
+        const pusher = new Pusher('0b5fa17e7ce3f90eee04', { cluster: 'ap1', forceTLS: true });
+        const channel = pusher.subscribe('chat-channel-' + target_user);
+
+        channel.bind('msg-event', function(data) {
+            if(data.sender === target_user) {
+                shouldScroll = true;
+                loadChats();
+            }
+        });
+
+        let typingTimeout;
+        channel.bind('typing-event', function(data) {
+            const typingBox = document.getElementById('typing_box');
+            if(data.sender === target_user && data.typing === true) {
+                typingBox.style.display = "block";
+                clearTimeout(typingTimeout);
+                typingTimeout = setTimeout(() => { typingBox.style.display = "none"; }, 3000);
+            }
+        });
+
+        function loadChats() {
+            fetch('owner.php?user=' + target_user + '&fetch_chat=1')
+                .then(res => res.text())
+                .then(data => {
+                    const pendingLoaders = chatBox.querySelectorAll('.tg-loading-bubble');
+                    chatBox.innerHTML = data || "<div class='my-auto text-center px-4 opacity-30'><p class='text-xs'>💬 No conversation yet</p></div>";
+                    
+                    if(pendingLoaders.length > 0) {
+                        pendingLoaders.forEach(el => chatBox.appendChild(el));
+                    }
+                    if(shouldScroll) { chatBox.scrollTop = chatBox.scrollHeight; shouldScroll = false; }
+                });
+        }
+
+        function notifyTyping() {
+            const formData = new FormData(); formData.append('owner_typing', '1');
+            fetch('owner.php?user=' + target_user, { method: 'POST', body: formData });
+        }
+
+        async function sendChat(e) {
+            e.preventDefault();
+            const msgInput = document.getElementById('owner_chat_msg');
+            const messageText = msgInput.value.trim();
+            if(messageText === "") return;
+
+            msgInput.value = "";
+
+            try {
+                const response = await fetch('/api?action=messages', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: 'owner',
+                        message: messageText,
+                        media_url: '',
+                        receiver_user: target_user
+                    })
+                });
+                if(response.ok) {
+                    shouldScroll = true;
+                    loadChats();
+                }
+            } catch(err) {
+                console.error(err);
+            }
+        }
+
+        async function triggerFileSend() {
+            const fileInput = document.getElementById('chat_file_input');
+            if(fileInput.files.length === 0) return;
+
+            const batch_id = 'batch_' + Date.now() + '_' + Math.floor(Math.random() * 9000 + 1000);
+
+            for (let i = 0; i < fileInput.files.length; i++) {
+                const file = fileInput.files[i];
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const loaderHtml = `
+                        <div class='tg-loading-bubble max-w-[250px] p-1 rounded-2xl shadow-md bg-slate-900/40 border border-slate-800/30 self-end relative overflow-hidden opacity-60'>
+                            <div class='relative rounded-xl overflow-hidden flex items-center justify-center' style='width:100%; height:145px;'>
+                                <img src='${e.target.result}' style='width:100%; height:100%; object-fit:cover; filter: blur(1.5px);'>
+                                <div class='absolute inset-0 m-auto w-8 h-8 border-4 border-red-500 border-t-transparent rounded-full animate-spin'></div>
+                            </div>
+                        </div>`;
+                    chatBox.innerHTML += loaderHtml;
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }
+                reader.readAsDataURL(file);
+
+                try {
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    const uploadRes = await fetch('/api?action=upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if(uploadRes.ok) {
+                        const uploadResult = await uploadRes.json();
+                        
+                        await fetch('/api?action=messages', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                username: 'owner',
+                                message: uploadResult.url,
+                                media_url: uploadResult.url,
+                                batch_id: batch_id,
+                                receiver_user: target_user
+                            })
+                        });
+                    }
+                } catch(err) {
+                    console.error(err);
+                }
+            }
+
+            fileInput.value = "";
+            shouldScroll = true;
+            loadChats();
+        }
+
+        setInterval(loadChats, 3000);
+        loadChats();
+    </script>
+</body>
+</html>
