@@ -56,12 +56,10 @@ export default {
       try {
         const target_user = url.searchParams.get("user") || "user";
         
-        // ဝယ်သူနှင့် ဆိုင်ရှင်ကြားက စာတွေကို အကုန်ထုတ်ယူခြင်း
         const { results } = await env.DB.prepare(
           "SELECT * FROM chat_messages WHERE (sender='owner' AND receiver=?) OR (sender=? AND receiver='owner') ORDER BY id ASC"
         ).bind(target_user, target_user).all();
         
-        // Front-end ဘက်က နားလည်အောင် ပုံစံပြောင်းပေးခြင်း
         const formattedMessages = results.map(msg => ({
           sender: msg.sender,
           message: msg.message,
@@ -79,20 +77,4 @@ export default {
 
     return new Response("Not Found", { status: 404, headers: corsHeaders });
   }
-};      const { username, message, media_url, batch_id, receiver_user } = await request.json();
-      const receiver = receiver_user || "owner";
-      
-      await env.DB.prepare(
-        "INSERT INTO chat_messages (sender, receiver, message, is_read, batch_id, media_url) VALUES (?, ?, ?, 0, ?, ?)"
-      ).bind(username, receiver, message, batch_id || null, media_url || null).run();
-      
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
-    } catch (e) {
-      return new Response(e.message, { status: 500, headers: corsHeaders });
-    }
-  }
-
-  return new Response("Not Found", { status: 404, headers: corsHeaders });
-                  }
+};
