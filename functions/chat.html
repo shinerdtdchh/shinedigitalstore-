@@ -1,0 +1,341 @@
+<?php
+@ini_set('upload_max_filesize', '150M');
+@ini_set('post_max_size', '150M');
+@ini_set('max_file_uploads', '50'); 
+@ini_set('max_execution_time', '300');
+
+error_reporting(0);
+ini_set('display_errors', 0);
+
+include('db.php');
+session_start();
+
+if (!isset($_SESSION['username'])) {
+    header("Location: login.php");
+    exit();
+}
+
+$my_username = $_SESSION['username'];
+
+if (isset($_GET['fetch_chat'])) {
+    $chat_history = cf_d1_query("SELECT * FROM chat_messages WHERE (sender='$my_username' AND receiver='owner') OR (sender='owner' AND receiver='$my_username') ORDER BY id ASC");
+    
+    if($chat_history) {
+        $total = count($chat_history);
+        for ($i = 0; $i < $total; $i++) {
+            $msg = $chat_history[$i];
+            $is_me = ($msg['sender'] === $my_username);
+            $bg_color = $is_me ? 'bg-blue-600 self-end text-right rounded-tr-none text-white' : 'bg-slate-900 border border-slate-800/80 self-start text-left rounded-tl-none text-slate-200';
+            
+            if (!empty($msg['media_url']) || strpos($msg['message'], 'http') !== false) {
+                $media_url = !empty($msg['media_url']) ? $msg['media_url'] : $msg['message'];
+                $media_group = [$media_url];
+                $current_batch = isset($msg['batch_id']) ? $msg['batch_id'] : '';
+                
+                if(!empty($current_batch)) {
+                    while (($i + 1) < $total && isset($chat_history[$i+1]['batch_id']) && $chat_history[$i+1]['batch_id'] === $current_batch && $chat_history[$i+1]['sender'] === $msg['sender']) {
+                        $i++;
+                        $media_group[] = !empty($chat_history[$i]['media_url']) ? $chat_history[$i]['media_url'] : $chat_history[$i]['message'];
+                    }
+                }
+
+                $count = count($media_group);
+                $grid_cols = 'grid-cols-1';
+                $max_w = 'max-w-[250px]'; 
+
+                if ($count == 2) { $grid_cols = 'grid-cols-2'; $max_w = 'max-w-[290px]'; }
+                elseif ($count == 3) { $grid_cols = 'grid-cols-3'; $max_w = 'max-w-[340px]'; }
+                elseif ($count >= 4) { $grid_cols = 'grid-cols-2'; $max_w = 'max-w-[320px]'; }
+
+                $align_self = $is_me ? 'self-end' : 'self-start';
+                
+                echo "<div class='{$max_w} p-1 rounded-2xl shadow-md bg-slate-900/40 border border-slate-800/30 {$align_self}'>";
+                echo "<div class='grid {$grid_cols} gap-1 overflow-hidden rounded-xl'>";
+                
+                foreach ($media_group as $media) {
+                    if (strpos($media, '.mp4') !== false || strpos($media, '.webm') !== false || strpos($media, '.mov') !== false) {
+                        echo "<video src='".htmlspecialchars($media)."' controls class='w-full h-auto rounded-lg'></video>";
+                    } else {
+                        $img_style = ($count > 1) ? "style='width:100%; height:145px; object-fit:cover;'" : "style='width:100%; max-height:250px; object-fit:contain;'";
+                        echo "<img src='".htmlspecialchars($media)."' {$img_style} class='rounded-lg shadow-sm active:scale-95 transition-all' onclick='window.open(this.src)' style='cursor:pointer;'>";
+                    }
+                }
+                
+                echo "</div>";
+                
+                $tick_mark = "";
+                if ($is_me) {
+                    if (isset($msg['is_read']) && (int)$msg['is_read'] === 1) {
+                        $tick_mark = " <span class='text-red-500 font-black ml-1.5 text-[10px] tracking-tighter'>✔✔</span>";
+                    } else {
+                        $tick_mark = " <span class='text-red-500/60 font-black ml-1.5 text-[10px]'>✔</span>";
+                    }
+                }
+                echo "<div class='text-[8px] opacity-40 flex justify-end items-center px-1.5 mt-1'>";
+                echo "<span>".date('h:i A', strtotime($msg['created_at']))."</span>" . $tick_mark;
+                echo "</div>";
+                echo "</div>";
+            } 
+            else {
+                echo "<div class='max-w-[85%] p-3.5 rounded-2xl text-xs break-all shadow-md {$bg_color}'>";
+                echo "<p class='leading-relaxed text-[13px]'>".htmlspecialchars($msg['message'])."</p>";
+                
+                $tick_mark = "";
+                if ($is_me) {
+                    if (isset($msg['is_read']) && (int)$msg['is_read'] === 1) {
+                        $tick_mark = " <span class='text-red-500 font-black ml-1.5 text-[10px] tracking-tighter'>✔✔</span>";
+                    } else {
+                        $tick_mark = " <span class='text-red-500/60 font-black ml-1.5 text-[10px]'>✔</span>";
+                    }
+                }
+                echo "<div class='text-[8px] opacity-40 flex justify-end items-center mt-1.5'>";
+                echo "<span>".date('h:i A', strtotime($msg['created_at']))."</span>" . $tick_mark;
+                echo "</div>";
+                echo "</div>";
+            }
+        }
+    }
+    exit();
+}
+
+if (isset($_GET['get_owner_status'])) {
+    $live_file = 'owner_live.json';
+    $response = ['status' => 'offline', 'typing' => false];
+
+    if (file_exists($live_file)) {
+        $data = json_decode(file_get_contents($live_file), true);
+        if (isset($data['last_active']) && (time() - (int)$data['last_active']) <= 8) {
+            $response['status'] = 'online';
+            if (isset($data['typing_to']) && $data['typing_to'] === $my_username && (time() - (int)$data['typing_time']) <= 4) {
+                $response['typing'] = true;
+            }
+        }
+    }
+    echo json_encode($response);
+    exit();
+}
+
+if (isset($_POST['user_typing'])) {
+    @file_put_contents('user_typing_'.$my_username.'.json', json_encode(['typing_time' => time()]));
+    echo "typing_logged";
+    exit();
+}
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Chat - Shine Digital Store</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Outfit', sans-serif; background: #020617; }
+        .cyber-bg { background: radial-gradient(circle at top, rgba(30, 41, 59, 0.5) 0%, rgba(2, 6, 23, 1) 100%); }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        .neon-glow { text-shadow: 0 0 15px rgba(59, 130, 246, 0.7), 0 0 30px rgba(59, 130, 246, 0.4); }
+        .bottom-nav-glass { background: rgba(18, 16, 36, 0.95); border-top: 1px solid rgba(255, 255, 255, 0.08); backdrop-filter: blur(10px); border-radius: 2rem 2rem 0 0; }
+        .floating-add-btn { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); box-shadow: 0 0 20px rgba(59, 130, 246, 0.5); }
+    </style>
+</head>
+<body class="text-white flex items-center justify-center min-h-screen w-full cyber-bg overflow-hidden">
+
+    <div class="w-full h-screen max-w-lg flex flex-col bg-slate-950/40 border-x border-slate-900/80 relative">
+        
+        <div class="text-center pt-5 pb-3 border-b border-slate-900/80 shrink-0 bg-slate-950/80 backdrop-blur-md">
+            <h1 class="text-base font-black text-blue-500 uppercase tracking-widest italic neon-glow">Shine Digital Store</h1>
+            <div id="status_indicator" class="flex items-center justify-center gap-1.5 mt-0.5">
+                <span id="status_dot" class="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
+                <p id="status_text" class="text-[9px] text-slate-500 font-bold tracking-wider uppercase">Offline</p>
+            </div>
+        </div>
+        
+        <div id="chat_scroll_box" class="flex-1 overflow-y-auto space-y-3.5 p-4 bg-slate-950/20 flex flex-col scrollbar-hide relative"></div>
+        
+        <div id="typing_box" class="px-4 py-1.5 bg-slate-950/80 backdrop-blur-sm border-t border-slate-900/40 shrink-0 hidden">
+            <div class="flex items-center gap-2">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-bounce"></span>
+                <span class="text-[10px] font-bold tracking-wider text-emerald-400 uppercase">Owner is typing...</span>
+            </div>
+        </div>
+
+        <form id="chatForm" class="flex gap-2 p-3 border-t border-slate-900/60 bg-slate-950/90 backdrop-blur-md items-center shrink-0" onsubmit="sendChat(event)" enctype="multipart/form-data">
+            <input type="file" id="chat_file_input" name="chat_files[]" accept="image/*,video/*" multiple class="hidden" onchange="triggerFileSend()">
+            
+            <button type="button" onclick="document.getElementById('chat_file_input').click()" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 p-3.5 rounded-2xl text-slate-400 hover:text-blue-400 shrink-0 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>
+            </button>
+            <input type="text" id="user_chat_msg" oninput="notifyTyping()" placeholder="မက်ဆေ့ခ်ျ ရိုက်ထည့်ပါ..." class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-3 text-xs outline-none focus:border-blue-500/80 text-white font-medium" autocomplete="off">
+            <button type="submit" class="bg-blue-600 px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-wider text-white">SEND</button>
+        </form>
+
+        <div class="w-full bottom-nav-glass px-2 py-2 flex justify-between items-center shrink-0 z-20 relative h-16">
+            <a href="index.php" class="flex-1 flex flex-col items-center justify-center opacity-50 text-slate-300"><span class="text-[9px] font-bold mt-0.5">Home</span></a>
+            <a href="posts.php" class="flex-1 flex flex-col items-center justify-center opacity-50 text-slate-300"><span class="text-[9px] font-bold mt-0.5">Posts</span></a>
+            <div class="flex-1 flex justify-center relative -top-4"><a href="index.php" class="w-12 h-12 rounded-full floating-add-btn flex items-center justify-center text-white text-xl font-bold">+</a></div>
+            <a href="chat.php" class="flex-1 flex flex-col items-center justify-center text-blue-500"><span class="text-[9px] font-black mt-0.5">Chats</span></a>
+            <a href="profile.php" class="flex-1 flex flex-col items-center justify-center opacity-50 text-slate-300"><span class="text-[9px] font-bold mt-0.5">Profile</span></a>
+        </div>
+    </div>
+
+    <script>
+        const chatBox = document.getElementById('chat_scroll_box');
+        let shouldScroll = true;
+        let lastMsgCount = 0;
+
+        function playMessageSound() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator(); const gain = ctx.createGain();
+                osc.type = 'sine'; osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+                osc.frequency.setValueAtTime(880, ctx.currentTime + 0.08);
+                gain.gain.setValueAtTime(0.15, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.3);
+                osc.connect(gain); gain.connect(ctx.destination); osc.start(); osc.stop(ctx.currentTime + 0.3);
+            } catch(e) {}
+        }
+
+        function loadChats() {
+            fetch('chat.php?fetch_chat=1')
+                .then(res => res.text())
+                .then(data => {
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = data;
+                    const currentMsgCount = tempDiv.querySelectorAll('.shadow-md').length;
+                    
+                    if (lastMsgCount > 0 && currentMsgCount > lastMsgCount) {
+                        const lastMsg = tempDiv.querySelectorAll('.shadow-md')[currentMsgCount - 1];
+                        if (lastMsg && !lastMsg.classList.contains('self-end')) {
+                            playMessageSound();
+                            shouldScroll = true;
+                        }
+                    }
+                    lastMsgCount = currentMsgCount;
+
+                    const pendingLoaders = chatBox.querySelectorAll('.tg-loading-bubble');
+                    chatBox.innerHTML = data || "<div class='my-auto text-center px-4 opacity-30'><p class='text-xs'>💬 Support Connected</p></div>";
+                    
+                    if(pendingLoaders.length > 0) {
+                        pendingLoaders.forEach(el => chatBox.appendChild(el));
+                    }
+
+                    if(shouldScroll) { chatBox.scrollTop = chatBox.scrollHeight; shouldScroll = false; }
+                });
+        }
+
+        function checkOwnerOnline() {
+            fetch('chat.php?get_owner_status=1')
+                .then(res => res.json())
+                .then(res => {
+                    const dot = document.getElementById('status_dot');
+                    const txt = document.getElementById('status_text');
+                    const typingBox = document.getElementById('typing_box');
+                    
+                    if (res.status === "online") {
+                        dot.className = "w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse";
+                        txt.className = "text-[9px] text-emerald-400 font-bold tracking-wider uppercase";
+                        txt.innerText = "Active Now";
+                    } else {
+                        dot.className = "w-1.5 h-1.5 rounded-full bg-slate-600";
+                        txt.className = "text-[9px] text-slate-500 font-bold tracking-wider uppercase";
+                        txt.innerText = "Offline";
+                    }
+
+                    if (res.typing) { typingBox.style.display = "block"; } else { typingBox.style.display = "none"; }
+                });
+        }
+
+        function notifyTyping() {
+            const formData = new FormData(); formData.append('user_typing', '1');
+            fetch('chat.php', { method: 'POST', body: formData });
+        }
+
+        async function sendChat(e) {
+            e.preventDefault();
+            const msgInput = document.getElementById('user_chat_msg');
+            const messageText = msgInput.value.trim();
+            if(messageText === "") return;
+
+            msgInput.value = "";
+
+            try {
+                const response = await fetch('/api?action=messages', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: '<?php echo $my_username; ?>',
+                        message: messageText,
+                        media_url: ''
+                    })
+                });
+                if(response.ok) {
+                    shouldScroll = true;
+                    loadChats();
+                }
+            } catch(err) {
+                console.error("Error sending message:", err);
+            }
+        }
+
+        async function triggerFileSend() {
+            const fileInput = document.getElementById('chat_file_input');
+            if(fileInput.files.length === 0) return;
+
+            const batch_id = 'batch_' + Date.now() + '_' + Math.floor(Math.random() * 9000 + 1000);
+
+            for (let i = 0; i < fileInput.files.length; i++) {
+                const file = fileInput.files[i];
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const loaderHtml = `
+                        <div class='tg-loading-bubble max-w-[250px] p-1 rounded-2xl shadow-md bg-slate-900/40 border border-slate-800/30 self-end relative overflow-hidden opacity-60'>
+                            <div class='relative rounded-xl overflow-hidden flex items-center justify-center' style='width:100%; height:145px;'>
+                                <img src='${e.target.result}' style='width:100%; height:100%; object-fit:cover; filter: blur(1.5px);'>
+                                <div class='absolute inset-0 m-auto w-8 h-8 border-4 border-red-500 border-t-transparent rounded-full animate-spin'></div>
+                            </div>
+                        </div>`;
+                    chatBox.innerHTML += loaderHtml;
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }
+                reader.readAsDataURL(file);
+
+                try {
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    const uploadRes = await fetch('/api?action=upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if(uploadRes.ok) {
+                        const uploadResult = await uploadRes.json();
+                        
+                        await fetch('/api?action=messages', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                username: '<?php echo $my_username; ?>',
+                                message: uploadResult.url,
+                                media_url: uploadResult.url,
+                                batch_id: batch_id
+                            })
+                        });
+                    }
+                } catch(err) {
+                    console.error("Error uploading file:", err);
+                }
+            }
+
+            fileInput.value = "";
+            shouldScroll = true;
+            loadChats();
+        }
+
+        setInterval(loadChats, 2000);      
+        setInterval(checkOwnerOnline, 2000); 
+        loadChats(); checkOwnerOnline();
+    </script>
+</body>
+</html>
