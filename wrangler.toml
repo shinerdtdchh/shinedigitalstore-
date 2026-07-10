@@ -3,11 +3,11 @@ name = "shinedigitalstore-1"
 main = "functions/api.js"
 compatibility_date = "2024-01-01"
 
-# 1️⃣ D1 Database ချိတ်ဆက်မှု
+# 1️⃣ D1 Database ချိတ်ဆက်မှု (ID အစစ်ဖြင့်)
 [[d1_databases]]
 binding = "DB"
 database_name = "shine-d"
-database_id = "7fbda3c1-618c-13e1-e0f9-c4a7adb56c64"
+database_id = "43309224-37d7-4497-a24e"
 
 # 2️⃣ R2 Storage Bucket ချိတ်ဆက်မှု
 [[r2_buckets]]
