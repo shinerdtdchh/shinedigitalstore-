@@ -3,7 +3,7 @@ name = "shinedigitalstore-1"
 main = "functions/api.js"
 compatibility_date = "2024-01-01"
 
-# Website Assets များအတွက် folder သတ်မှတ်ခြင်း
+# 💡 index.html ကို ဆိုင် Website အဖြစ် တိုက်ရိုက်ပြရန်
 [site]
 bucket = "."
 
