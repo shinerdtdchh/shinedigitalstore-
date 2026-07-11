@@ -1,5 +1,5 @@
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, context) {
     const url = new URL(request.url);
     const corsHeaders = {
       "Access-Control-Allow-Origin": "*",
@@ -9,6 +9,33 @@ export default {
 
     if (request.method === "OPTIONS") {
       return new Response(null, { headers: corsHeaders });
+    }
+
+    // 💡 [အရေးကြီးဆုံးပြင်ဆင်ချက်] ပုံမှန် Website အနေနဲ့ ဝင်လာရင် အောက်က HTML စာမျက်နှာကို ပြပေးမည်
+    if (url.pathname === "/" && !url.searchParams.has("action")) {
+      const html = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Shine Digital Store</title>
+          <style>
+              body { font-family: Arial, sans-serif; text-align: center; background-color: #121212; color: white; padding: 50px; }
+              h1 { color: #00ffcc; }
+              .container { max-width: 600px; margin: auto; padding: 20px; border: 1px solid #333; border-radius: 10px; background: #1e1e1e; }
+          </style>
+      </head>
+      <body>
+          <div class="container">
+              <h1>Welcome to Shine Digital Store</h1>
+              <p>Your ultimate digital solutions and platform.</p>
+              <small style="color: #888;">API Status: Active & Ready 🟢</small>
+          </div>
+      </body>
+      </html>
+      `;
+      return new Response(html, { headers: { "Content-Type": "text/html" } });
     }
 
     try {
