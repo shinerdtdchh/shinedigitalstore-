@@ -23,8 +23,8 @@
         <div class="text-center pt-5 pb-3 border-b border-slate-900/80 shrink-0 bg-slate-950/80 backdrop-blur-md">
             <h1 class="text-base font-black text-blue-500 uppercase tracking-widest italic neon-glow">Shine Digital Store</h1>
             <div id="status_indicator" class="flex items-center justify-center gap-1.5 mt-0.5">
-                <span id="status_dot" class="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
-                <p id="status_text" class="text-[9px] text-slate-500 font-bold tracking-wider uppercase">Offline</p>
+                <span id="status_dot" class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></span>
+                <p id="status_text" class="text-[9px] text-emerald-400 font-bold tracking-wider uppercase">Online</p>
             </div>
         </div>
         
@@ -58,6 +58,8 @@
 
     <script>
         const chatBox = document.getElementById('chat_scroll_box');
+        // VPN မလိုပဲ တိုက်ရိုက်အလုပ်လုပ်မည့် လူကြီးမင်း၏ Custom Domain လင့်ခ်
+        const API_BASE = 'https://api.shinedigitalstore.com'; 
         let shouldScroll = true;
         let lastMsgCount = 0;
 
@@ -74,7 +76,7 @@
         }
 
         function loadChats() {
-            fetch('https://shine-chat-api.shineaung6375.workers.dev/?action=get_messages')
+            fetch(`${API_BASE}/?action=get_messages`)
                 .then(res => res.json())
                 .then(data => {
                     if (!Array.isArray(data)) return;
@@ -113,7 +115,8 @@
                         }
                     });
 
-                    const pendingLoaders = chatBox.querySelectorAll('.tg-loading-bubble');
+                    // တင်နေဆဲ Loader အဝိုင်းလေးများ ပျောက်မသွားအောင် ထိန်းသိမ်းခြင်း
+                    const pendingLoaders = Array.from(chatBox.querySelectorAll('.tg-loading-bubble'));
                     chatBox.innerHTML = chatHtml || "<div class='my-auto text-center px-4 opacity-30'><p class='text-xs'>💬 Support Connected</p></div>";
                     
                     if(pendingLoaders.length > 0) {
@@ -133,7 +136,7 @@
             msgInput.value = "";
 
             try {
-                const response = await fetch('https://shine-chat-api.shineaung6375.workers.dev/?action=messages', {
+                const response = await fetch(`${API_BASE}/?action=messages`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -151,63 +154,113 @@
             }
         }
 
-        async function triggerFileSend() {
+        // ဓာတ်ပုံတင်ရာတွင် Progress အဝိုင်းလေးနှင့် Blur ပုံရိပ်ပြသပေးမည့်စနစ်
+        function triggerFileSend() {
             const fileInput = document.getElementById('chat_file_input');
             if(fileInput.files.length === 0) return;
 
             const batch_id = 'batch_' + Date.now() + '_' + Math.floor(Math.random() * 9000 + 1000);
 
-            for (let i = 0; i < fileInput.files.length; i++) {
-                const file = fileInput.files[i];
+            Array.from(fileInput.files).forEach(file => {
                 const reader = new FileReader();
+                const uniqueId = 'upload_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+
                 reader.onload = function(e) {
+                    // လူကြီးမင်း အလိုရှိသော Blur နောက်ခံနှင့် အဝိုင်းလည်စနစ် HTML ဒီဇိုင်း
                     const loaderHtml = `
-                        <div class='tg-loading-bubble max-w-[250px] p-1 rounded-2xl shadow-md bg-slate-900/40 border border-slate-800/30 self-end relative overflow-hidden opacity-60'>
-                            <div class='relative rounded-xl overflow-hidden flex items-center justify-center' style='width:100%; height:145px;'>
-                                <img src='${e.target.result}' style='width:100%; height:100%; object-fit:cover; filter: blur(1.5px);'>
-                                <div class='absolute inset-0 m-auto w-8 h-8 border-4 border-red-500 border-t-transparent rounded-full animate-spin'></div>
+                        <div id="${uniqueId}" class='tg-loading-bubble max-w-[250px] p-1 rounded-2xl shadow-md bg-slate-900/40 border border-slate-800/30 self-end relative overflow-hidden transition-all duration-300'>
+                            <div class='relative rounded-xl overflow-hidden flex items-center justify-center' style='width:100%; h-auto; min-height:145px;'>
+                                <img src='${e.target.result}' class='w-full h-full object-cover blur-[4px] opacity-60 scale-105 transition-all'>
+                                <div class='absolute inset-0 m-auto flex flex-col items-center justify-center gap-2 bg-slate-950/40 rounded-xl'>
+                                    <div id="circle_${uniqueId}" class='w-9 h-9 border-[3.5px] border-blue-500 border-t-transparent rounded-full animate-spin shadow-[0_0_10px_rgba(59,130,246,0.5)]'></div>
+                                    <span id="text_${uniqueId}" class='text-[10px] font-black tracking-widest text-blue-400 bg-slate-950/80 px-2 py-0.5 rounded-full border border-blue-900/50 min-w-[32px] text-center'>0%</span>
+                                </div>
                             </div>
                         </div>`;
                     chatBox.innerHTML += loaderHtml;
                     chatBox.scrollTop = chatBox.scrollHeight;
+                    
+                    // တင်ခြင်းလုပ်ငန်းစဉ်အား XHR ဖြင့် စတင်ခြင်း (Progress Bar ရရန်အတွက်)
+                    uploadFileWithProgress(file, uniqueId, batch_id);
                 }
                 reader.readAsDataURL(file);
-
-                try {
-                    const formData = new FormData();
-                    formData.append('file', file);
-
-                    const uploadRes = await fetch('https://shine-chat-api.shineaung6375.workers.dev/?action=upload', {
-                        method: 'POST',
-                        body: formData
-                    });
-
-                    if(uploadRes.ok) {
-                        const uploadResult = await uploadRes.json();
-                        
-                        await fetch('https://shine-chat-api.shineaung6375.workers.dev/?action=messages', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                username: 'user',
-                                message: uploadResult.url,
-                                media_url: uploadResult.url,
-                                batch_id: batch_id
-                            })
-                        });
-                    }
-                } catch(err) {
-                    console.error("Error uploading file:", err);
-                }
-            }
+            });
 
             fileInput.value = "";
-            shouldScroll = true;
-            loadChats();
+        }
+
+        function uploadFileWithProgress(file, elementId, batchId) {
+            const xhr = new XMLHttpRequest();
+            const formData = new FormData();
+            formData.append('file', file);
+
+            // ရာခိုင်နှုန်းတွက်ချက်၍ ပြသခြင်း
+            xhr.upload.addEventListener('progress', (e) => {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    const textEl = document.getElementById(`text_${elementId}`);
+                    if (textEl) textEl.innerText = percent + '%';
+                }
+            });
+
+            xhr.onreadystatechange = async function() {
+                if (xhr.readyState === 4) {
+                    const bubble = document.getElementById(elementId);
+                    if (xhr.status === 200) {
+                        try {
+                            const uploadResult = JSON.parse(xhr.responseText);
+                            
+                            // ဒေတာဘေ့စ်ထဲသို့ လင့်ခ်ပို့ခြင်း
+                            const res = await fetch(`${API_BASE}/?action=messages`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    username: 'user',
+                                    message: uploadResult.url,
+                                    media_url: uploadResult.url,
+                                    batch_id: batchId
+                                })
+                            });
+
+                            if(res.ok) {
+                                if(bubble) bubble.remove(); // အောင်မြင်လျှင် Loader အားဖျက်၍ Chat အသစ်ဆွဲမည်
+                                shouldScroll = true;
+                                loadChats();
+                            }
+                        } catch(err) {
+                            showUploadError(elementId);
+                        }
+                    } else {
+                        showUploadError(elementId);
+                    }
+                }
+            };
+
+            xhr.open('POST', `${API_BASE}/?action=upload`, true);
+            xhr.send(formData);
+        }
+
+        // လိုင်းပြတ်တောက်၍ မအောင်မြင်ပါက Error ပြသမည့်စနစ်
+        function showUploadError(elementId) {
+            const circle = document.getElementById(`circle_${elementId}`);
+            const text = document.getElementById(`text_${elementId}`);
+            if(circle) {
+                circle.classList.remove('animate-spin', 'border-blue-500');
+                circle.classList.add('border-red-500', 'bg-red-500/10');
+            }
+            if(text) {
+                text.innerText = 'FAILED';
+                text.classList.remove('text-blue-400', 'border-blue-900/50');
+                text.classList.add('text-red-400', 'border-red-900/50');
+            }
+            setTimeout(() => {
+                const bubble = document.getElementById(elementId);
+                if(bubble) bubble.remove();
+            }, 3000);
         }
 
         setInterval(loadChats, 2000);      
         loadChats();
     </script>
 </body>
-</html>
+    </html>
