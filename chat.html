@@ -74,7 +74,7 @@
         }
 
         function loadChats() {
-            fetch('/api?action=get_messages')
+            fetch('https://shine-chat-api.shineaung6375.workers.dev/?action=get_messages')
                 .then(res => res.json())
                 .then(data => {
                     if (!Array.isArray(data)) return;
@@ -133,7 +133,7 @@
             msgInput.value = "";
 
             try {
-                const response = await fetch('/api?action=messages', {
+                const response = await fetch('https://shine-chat-api.shineaung6375.workers.dev/?action=messages', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -177,7 +177,7 @@
                     const formData = new FormData();
                     formData.append('file', file);
 
-                    const uploadRes = await fetch('/api?action=upload', {
+                    const uploadRes = await fetch('https://shine-chat-api.shineaung6375.workers.dev/?action=upload', {
                         method: 'POST',
                         body: formData
                     });
@@ -185,7 +185,7 @@
                     if(uploadRes.ok) {
                         const uploadResult = await uploadRes.json();
                         
-                        await fetch('/api?action=messages', {
+                        await fetch('https://shine-chat-api.shineaung6375.workers.dev/?action=messages', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
