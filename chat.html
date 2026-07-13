@@ -41,7 +41,7 @@
             <input type="file" id="chat_file_input" name="chat_files[]" accept="image/*,video/*" multiple class="hidden" onchange="triggerFileSend()">
             
             <button type="button" onclick="document.getElementById('chat_file_input').click()" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 p-3.5 rounded-2xl text-slate-400 hover:text-blue-400 shrink-0 flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 00.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>
             </button>
             <input type="text" id="user_chat_msg" placeholder="မက်ဆေ့ခ်ျ ရိုက်ထည့်ပါ..." class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-3 text-xs outline-none focus:border-blue-500/80 text-white font-medium" autocomplete="off">
             <button type="submit" class="bg-blue-600 px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-wider text-white">SEND</button>
@@ -58,7 +58,6 @@
 
     <script>
         const chatBox = document.getElementById('chat_scroll_box');
-        // VPN မလိုပဲ တိုက်ရိုက်အလုပ်လုပ်မည့် လူကြီးမင်း၏ Custom Domain လင့်ခ်
         const API_BASE = 'https://api.shinedigitalstore.com/'; 
         let shouldScroll = true;
         let lastMsgCount = 0;
@@ -76,7 +75,7 @@
         }
 
         function loadChats() {
-            fetch(`${API_BASE}/?action=get_messages`)
+            fetch(`${API_BASE}?action=get_messages&user=user`)
                 .then(res => res.json())
                 .then(data => {
                     if (!Array.isArray(data)) return;
@@ -115,7 +114,6 @@
                         }
                     });
 
-                    // တင်နေဆဲ Loader အဝိုင်းလေးများ ပျောက်မသွားအောင် ထိန်းသိမ်းခြင်း
                     const pendingLoaders = Array.from(chatBox.querySelectorAll('.tg-loading-bubble'));
                     chatBox.innerHTML = chatHtml || "<div class='my-auto text-center px-4 opacity-30'><p class='text-xs'>💬 Support Connected</p></div>";
                     
@@ -136,7 +134,7 @@
             msgInput.value = "";
 
             try {
-                const response = await fetch(`${API_BASE}/?action=messages`, {
+                const response = await fetch(`${API_BASE}?action=messages`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -154,7 +152,6 @@
             }
         }
 
-        // ဓာတ်ပုံတင်ရာတွင် Progress အဝိုင်းလေးနှင့် Blur ပုံရိပ်ပြသပေးမည့်စနစ်
         function triggerFileSend() {
             const fileInput = document.getElementById('chat_file_input');
             if(fileInput.files.length === 0) return;
@@ -166,10 +163,9 @@
                 const uniqueId = 'upload_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
 
                 reader.onload = function(e) {
-                    // လူကြီးမင်း အလိုရှိသော Blur နောက်ခံနှင့် အဝိုင်းလည်စနစ် HTML ဒီဇိုင်း
                     const loaderHtml = `
                         <div id="${uniqueId}" class='tg-loading-bubble max-w-[250px] p-1 rounded-2xl shadow-md bg-slate-900/40 border border-slate-800/30 self-end relative overflow-hidden transition-all duration-300'>
-                            <div class='relative rounded-xl overflow-hidden flex items-center justify-center' style='width:100%; h-auto; min-height:145px;'>
+                            <div class='relative rounded-xl overflow-hidden flex items-center justify-center' style='width:100%; min-height:145px;'>
                                 <img src='${e.target.result}' class='w-full h-full object-cover blur-[4px] opacity-60 scale-105 transition-all'>
                                 <div class='absolute inset-0 m-auto flex flex-col items-center justify-center gap-2 bg-slate-950/40 rounded-xl'>
                                     <div id="circle_${uniqueId}" class='w-9 h-9 border-[3.5px] border-blue-500 border-t-transparent rounded-full animate-spin shadow-[0_0_10px_rgba(59,130,246,0.5)]'></div>
@@ -180,7 +176,6 @@
                     chatBox.innerHTML += loaderHtml;
                     chatBox.scrollTop = chatBox.scrollHeight;
                     
-                    // တင်ခြင်းလုပ်ငန်းစဉ်အား XHR ဖြင့် စတင်ခြင်း (Progress Bar ရရန်အတွက်)
                     uploadFileWithProgress(file, uniqueId, batch_id);
                 }
                 reader.readAsDataURL(file);
@@ -194,7 +189,6 @@
             const formData = new FormData();
             formData.append('file', file);
 
-            // ရာခိုင်နှုန်းတွက်ချက်၍ ပြသခြင်း
             xhr.upload.addEventListener('progress', (e) => {
                 if (e.lengthComputable) {
                     const percent = Math.round((e.loaded / e.total) * 100);
@@ -210,8 +204,7 @@
                         try {
                             const uploadResult = JSON.parse(xhr.responseText);
                             
-                            // ဒေတာဘေ့စ်ထဲသို့ လင့်ခ်ပို့ခြင်း
-                            const res = await fetch(`${API_BASE}/?action=messages`, {
+                            const res = await fetch(`${API_BASE}?action=messages`, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
@@ -223,7 +216,7 @@
                             });
 
                             if(res.ok) {
-                                if(bubble) bubble.remove(); // အောင်မြင်လျှင် Loader အားဖျက်၍ Chat အသစ်ဆွဲမည်
+                                if(bubble) bubble.remove();
                                 shouldScroll = true;
                                 loadChats();
                             }
@@ -236,11 +229,10 @@
                 }
             };
 
-            xhr.open('POST', `${API_BASE}/?action=upload`, true);
+            xhr.open('POST', `${API_BASE}?action=upload`, true);
             xhr.send(formData);
         }
 
-        // လိုင်းပြတ်တောက်၍ မအောင်မြင်ပါက Error ပြသမည့်စနစ်
         function showUploadError(elementId) {
             const circle = document.getElementById(`circle_${elementId}`);
             const text = document.getElementById(`text_${elementId}`);
@@ -263,4 +255,4 @@
         loadChats();
     </script>
 </body>
-    </html>
+</html>
