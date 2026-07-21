@@ -3,82 +3,215 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat with Shine Store</title>
+    <title>Shine Store Chat</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 </head>
-<body class="bg-slate-100 h-screen flex justify-center items-center font-sans">
+<body class="bg-slate-900 h-screen flex justify-center items-center font-sans">
 
-    <!-- Chat Card Wrapper -->
-    <div class="w-full max-w-md h-full md:h-[650px] bg-white md:rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+    <!-- Container -->
+    <div class="w-full max-w-md h-full md:h-[700px] bg-slate-800 md:rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-700">
         
-        <!-- Header -->
-        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 flex items-center justify-between shadow-md">
-            <div class="flex items-center space-x-3">
-                <div class="relative">
-                    <div class="w-10 h-10 rounded-full bg-white text-blue-600 font-bold flex items-center justify-center text-lg shadow">
-                        🛍️
+        <!-- Header (Telegram Style Owners Section) -->
+        <div class="bg-slate-900 border-b border-slate-700/80 p-3">
+            <div class="flex items-center justify-between mb-2 px-1">
+                <span class="text-xs font-bold text-slate-400 tracking-wider uppercase">Active Admins</span>
+                <span class="text-[10px] bg-green-500/20 text-green-400 font-semibold px-2 py-0.5 rounded-full border border-green-500/30">Online</span>
+            </div>
+
+            <!-- 4 Owner Profiles -->
+            <div class="flex items-center justify-between px-2 pt-1">
+                <!-- Owner 1 -->
+                <div class="flex flex-col items-center cursor-pointer group">
+                    <div class="relative w-12 h-12 rounded-full p-0.5 bg-gradient-to-tr from-cyan-500 to-blue-500">
+                        <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Owner1" class="w-full h-full rounded-full bg-slate-800 p-1">
+                        <span class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-slate-900 rounded-full"></span>
                     </div>
-                    <span class="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></span>
+                    <span class="text-[10px] text-slate-300 font-medium mt-1">Shine (Main)</span>
                 </div>
-                <div>
-                    <h2 class="font-bold text-base leading-tight">Shine Digital Store</h2>
-                    <p class="text-xs text-blue-100 flex items-center gap-1">
-                        <span class="w-1.5 h-1.5 bg-green-300 rounded-full animate-pulse"></span> Online Support
-                    </p>
+
+                <!-- Owner 2 -->
+                <div class="flex flex-col items-center cursor-pointer group">
+                    <div class="relative w-12 h-12 rounded-full p-0.5 bg-gradient-to-tr from-cyan-500 to-blue-500">
+                        <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Owner2" class="w-full h-full rounded-full bg-slate-800 p-1">
+                        <span class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-slate-900 rounded-full"></span>
+                    </div>
+                    <span class="text-[10px] text-slate-300 font-medium mt-1">Admin Min</span>
+                </div>
+
+                <!-- Owner 3 -->
+                <div class="flex flex-col items-center cursor-pointer group">
+                    <div class="relative w-12 h-12 rounded-full p-0.5 bg-gradient-to-tr from-cyan-500 to-blue-500">
+                        <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Owner3" class="w-full h-full rounded-full bg-slate-800 p-1">
+                        <span class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-slate-900 rounded-full"></span>
+                    </div>
+                    <span class="text-[10px] text-slate-300 font-medium mt-1">Support Htet</span>
+                </div>
+
+                <!-- Owner 4 -->
+                <div class="flex flex-col items-center cursor-pointer group">
+                    <div class="relative w-12 h-12 rounded-full p-0.5 bg-gradient-to-tr from-cyan-500 to-blue-500">
+                        <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Owner4" class="w-full h-full rounded-full bg-slate-800 p-1">
+                        <span class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-slate-900 rounded-full"></span>
+                    </div>
+                    <span class="text-[10px] text-slate-300 font-medium mt-1">Sales Kyaw</span>
                 </div>
             </div>
         </div>
 
-        <!-- Chat Messages Area -->
-        <div id="chat-box" class="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50">
-            <!-- Messages will load here -->
+        <!-- Call Buttons Bar -->
+        <div class="bg-slate-800/90 px-4 py-2 border-b border-slate-700 flex justify-between items-center text-xs text-slate-300">
+            <span>💬 Live Customer Support</span>
+            <div class="flex space-x-3">
+                <button onclick="startCall('audio')" class="hover:text-cyan-400 bg-slate-700 p-2 rounded-full transition" title="Voice Call">
+                    <i class="fa-solid fa-phone"></i>
+                </button>
+                <button onclick="startCall('video')" class="hover:text-cyan-400 bg-slate-700 p-2 rounded-full transition" title="Video Call">
+                    <i class="fa-solid fa-video"></i>
+                </button>
+            </div>
         </div>
 
-        <!-- Input Area -->
-        <div class="bg-white p-3 border-t border-slate-200 flex items-center space-x-2">
-            <input type="text" id="message-input" onkeypress="handleKeyPress(event)" placeholder="စာတို ရိုက်ထည့်ပါ..." class="flex-1 bg-slate-100 text-slate-800 border border-slate-300 rounded-full px-5 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:bg-white transition">
-            <button onclick="sendMessage()" class="bg-blue-600 hover:bg-blue-700 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition active:scale-95">
+        <!-- Chat Area -->
+        <div id="chat-box" class="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-900"></div>
+
+        <!-- Media Preview Bar -->
+        <div id="file-preview" class="hidden bg-slate-800 px-4 py-2 border-t border-slate-700 flex justify-between items-center text-xs text-cyan-400">
+            <span id="file-name">Selected File</span>
+            <button onclick="cancelFile()" class="text-red-400 hover:text-red-300"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <!-- Voice Recording Indicator -->
+        <div id="record-status" class="hidden bg-red-500/10 border-t border-red-500/30 px-4 py-2 flex justify-between items-center text-xs text-red-400 animate-pulse">
+            <span>🎙️ Audio အသံသွင်းနေပါသည်...</span>
+            <button onclick="stopRecording()" class="bg-red-500 text-white px-3 py-1 rounded-full font-bold text-[10px]">Send Voice</button>
+        </div>
+
+        <!-- Input Area (Telegram Design) -->
+        <div class="bg-slate-800 p-3 border-t border-slate-700 flex items-center space-x-2">
+            <!-- File Attach -->
+            <label class="cursor-pointer text-slate-400 hover:text-cyan-400 p-2 transition">
+                <i class="fa-solid fa-paperclip text-lg"></i>
+                <input type="file" id="file-input" class="hidden" accept="image/*,video/*" onchange="handleFileSelect(event)">
+            </label>
+
+            <!-- Text Input -->
+            <input type="text" id="message-input" onkeypress="if(event.key==='Enter') sendMessage()" placeholder="Write a message..." class="flex-1 bg-slate-900 text-slate-100 border border-slate-700 rounded-full px-4 py-2.5 text-sm focus:outline-none focus:border-cyan-500 transition placeholder-slate-500">
+
+            <!-- Audio Record Button -->
+            <button id="mic-btn" onclick="toggleRecording()" class="text-slate-400 hover:text-red-400 p-2 transition" title="Hold/Click to Record">
+                <i class="fa-solid fa-microphone text-lg"></i>
+            </button>
+
+            <!-- Send Button -->
+            <button onclick="sendMessage()" class="bg-cyan-500 hover:bg-cyan-400 text-slate-900 w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition active:scale-95 font-bold">
                 <i class="fa-solid fa-paper-plane text-sm"></i>
             </button>
         </div>
     </div>
 
     <script>
-        const firebaseConfig = {
-            databaseURL: "https://shine-store-chat-default-rtdb.firebaseio.com/"
-        };
+        const firebaseConfig = { databaseURL: "https://shine-store-chat-default-rtdb.firebaseio.com/" };
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        // LocalStorage သုံးပြီး Customer အကောင့်စွဲမြဲအောင် လုပ်ထားခြင်း
-        let userId = localStorage.getItem("shine_chat_user_id");
-        if (!userId) {
-            userId = "User_" + Math.floor(1000 + Math.random() * 9000);
-            localStorage.setItem("shine_chat_user_id", userId);
+        let userId = localStorage.getItem("shine_chat_user_id") || "User_" + Math.floor(1000 + Math.random() * 9000);
+        localStorage.setItem("shine_chat_user_id", userId);
+
+        let selectedFileBase64 = null;
+        let selectedFileType = null;
+        let mediaRecorder, audioChunks = [];
+
+        // File Select (Photos / Videos)
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                selectedFileBase64 = event.target.result;
+                selectedFileType = file.type.startsWith('image/') ? 'image' : 'video';
+                document.getElementById('file-name').innerText = (selectedFileType === 'image' ? '📷 Photo: ' : '🎥 Video: ') + file.name;
+                document.getElementById('file-preview').classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
         }
 
-        function handleKeyPress(e) {
-            if (e.key === 'Enter') sendMessage();
+        function cancelFile() {
+            selectedFileBase64 = null;
+            selectedFileType = null;
+            document.getElementById('file-input').value = "";
+            document.getElementById('file-preview').classList.add('hidden');
         }
 
+        // Voice Recording System
+        async function toggleRecording() {
+            if (!mediaRecorder || mediaRecorder.state === "inactive") {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+                mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                mediaRecorder.start();
+                document.getElementById('record-status').classList.remove('hidden');
+            } else {
+                stopRecording();
+            }
+        }
+
+        function stopRecording() {
+            if (mediaRecorder && mediaRecorder.state === "recording") {
+                mediaRecorder.stop();
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        database.ref("messages").push({
+                            sender: userId,
+                            audio: reader.result,
+                            type: 'audio',
+                            role: "customer",
+                            timestamp: Date.now()
+                        });
+                    };
+                    reader.readAsDataURL(audioBlob);
+                    document.getElementById('record-status').classList.add('hidden');
+                };
+            }
+        }
+
+        // Call Feature Simulation
+        function startCall(type) {
+            alert((type === 'video' ? '🎥 Video' : '📞 Voice') + " Call ခေါ်ဆိုနေပါသည်။ Owner ဘက်မှ လက်ခံပါက စတင်ပြောဆိုနိုင်ပါမည်။");
+        }
+
+        // Send Message
         function sendMessage() {
             const input = document.getElementById('message-input');
             const text = input.value.trim();
-            if (!text) return;
 
-            database.ref("messages").push({
+            if (!text && !selectedFileBase64) return;
+
+            const msgData = {
                 sender: userId,
-                text: text,
                 role: "customer",
                 timestamp: Date.now()
-            });
+            };
+
+            if (text) msgData.text = text;
+            if (selectedFileBase64) {
+                msgData.file = selectedFileBase64;
+                msgData.type = selectedFileType;
+            }
+
+            database.ref("messages").push(msgData);
 
             input.value = "";
+            cancelFile();
         }
 
+        // Realtime Messages Render
         database.ref("messages").on("child_added", (snapshot) => {
             const msg = snapshot.val();
             const chatBox = document.getElementById('chat-box');
@@ -90,18 +223,28 @@
             const msgDiv = document.createElement('div');
             msgDiv.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} mb-1`;
 
+            let mediaHTML = '';
+            if (msg.type === 'image') {
+                mediaHTML = `<img src="${msg.file}" class="max-w-[200px] rounded-lg mb-1 border border-slate-700 shadow">`;
+            } else if (msg.type === 'video') {
+                mediaHTML = `<video controls src="${msg.file}" class="max-w-[200px] rounded-lg mb-1 border border-slate-700 shadow"></video>`;
+            } else if (msg.type === 'audio') {
+                mediaHTML = `<audio controls src="${msg.audio}" class="max-w-[220px] mb-1"></audio>`;
+            }
+
             msgDiv.innerHTML = `
                 <span class="text-[10px] text-slate-400 px-1 mb-0.5">
-                    ${isOwner ? '👑 Shine Store' : (isMe ? 'သင်' : msg.sender)}
+                    ${isOwner ? '👑 ' + msg.sender : (isMe ? 'You' : msg.sender)}
                 </span>
-                <div class="max-w-[78%] px-4 py-2.5 rounded-2xl text-sm shadow-sm ${
+                <div class="max-w-[80%] px-3.5 py-2 rounded-2xl text-sm shadow-md ${
                     isMe 
-                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-br-none' 
-                    : (isOwner ? 'bg-indigo-600 text-white rounded-bl-none font-medium' : 'bg-white text-slate-800 border border-slate-200 rounded-bl-none')
+                    ? 'bg-cyan-600 text-white rounded-br-none' 
+                    : (isOwner ? 'bg-indigo-600 text-white rounded-bl-none font-medium' : 'bg-slate-800 text-slate-100 border border-slate-700 rounded-bl-none')
                 }">
-                    ${msg.text}
+                    ${mediaHTML}
+                    ${msg.text ? `<div>${msg.text}</div>` : ''}
                 </div>
-                <span class="text-[9px] text-slate-400 px-1 mt-0.5">${timeStr}</span>
+                <span class="text-[9px] text-slate-500 px-1 mt-0.5">${timeStr}</span>
             `;
 
             chatBox.appendChild(msgDiv);
