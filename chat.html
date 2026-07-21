@@ -6,7 +6,6 @@
     <title>Stream Chat - Shine Store</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/stream-chat"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-sha256/0.9.0/sha256.min.js"></script>
 </head>
 <body class="bg-gray-100 h-screen flex flex-col">
 
@@ -33,33 +32,32 @@
 
     <script>
         const API_KEY = "srcxzrwfghdq";
-        const API_SECRET = "ap663vskqdbyfkhjp34acxxdw6bu4ywzqf47wpna7nv887fnc4nee2mmeanrfp8d";
         
+        // Random User ID for Customer
         const userId = "user_" + Math.floor(Math.random() * 100000);
         const userName = "Customer " + userId.split('_')[1];
 
         let client, channel;
 
-        // JWT Token Generator for Stream PROD Mode
-        function generateToken(targetUserId) {
-            const header = { alg: "HS256", typ: "JWT" };
-            const payload = { user_id: targetUserId };
-            const b64Header = btoa(JSON.stringify(header)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-            const b64Payload = btoa(JSON.stringify(payload)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-            const signature = sha256.hmac(API_SECRET, b64Header + "." + b64Payload);
-            const b64Signature = btoa(signature.match(/\w{2}/g).map(a => String.fromCharCode(parseInt(a, 16))).join(''))
-                .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-            return `${b64Header}.${b64Payload}.${b64Signature}`;
-        }
-
         async function initChat() {
             try {
-                client = StreamChat.getInstance(API_KEY);
-                const userToken = generateToken(userId);
+                // Initialize Stream Client
+                client = new StreamChat(API_KEY);
 
-                await client.connectUser({ id: userId, name: userName }, userToken);
+                // Stream Dev Token တိုက်ရိုက်ယူခြင်း
+                const userToken = client.devToken(userId);
 
-                channel = client.channel('messaging', 'shine_store_public', { name: 'General Customer Support' });
+                // Connect User
+                await client.connectUser(
+                    { id: userId, name: userName },
+                    userToken
+                );
+
+                // Get Channel
+                channel = client.channel('messaging', 'shine_store_public', {
+                    name: 'General Customer Support'
+                });
+
                 await channel.watch();
 
                 document.getElementById('status').innerText = "Online 🟢";
@@ -159,4 +157,4 @@
         initChat();
     </script>
 </body>
-</html>
+    </html>
