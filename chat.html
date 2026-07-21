@@ -3,181 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stream Chat - Shine Store</title>
+    <title>Customer Chat - Shine Store</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/stream-chat"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 </head>
 <body class="bg-gray-100 h-screen flex flex-col">
 
     <div class="bg-blue-600 text-white p-4 font-bold text-center text-lg shadow-md flex justify-between items-center px-6">
-        <span>💬 Shine Digital Store Chat</span>
-        <span id="status" class="text-xs bg-blue-700 px-2 py-1 rounded-full">Connecting...</span>
+        <span>💬 Shine Digital Store Support</span>
+        <span id="status" class="text-xs bg-green-500 px-2 py-1 rounded-full">Online 🟢</span>
     </div>
 
     <div id="chat-box" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
 
-    <div class="bg-white p-3 border-t flex flex-col space-y-2">
-        <div id="file-name-display" class="hidden text-xs text-blue-600 font-semibold px-2"></div>
-        <div class="flex items-center space-x-2">
-            <label class="cursor-pointer bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-2 rounded-lg text-lg">
-                📁
-                <input type="file" id="file-input" class="hidden" accept="image/*,video/*" onchange="handleFileSelect()">
-            </label>
-            <input type="text" id="message-input" placeholder="စာရိုက်ပါ..." class="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
-            <button onclick="sendMessage()" id="send-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2 rounded-lg text-sm transition">
-                ပို့မည်
-            </button>
-        </div>
+    <div class="bg-white p-3 border-t flex space-x-2">
+        <input type="text" id="message-input" placeholder="စာရိုက်ပါ..." class="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
+        <button onclick="sendMessage()" id="send-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2 rounded-lg text-sm transition">
+            ပို့မည်
+        </button>
     </div>
 
     <script>
-        const API_KEY = "srcxzrwfghdq";
-        const API_SECRET = "ap663vskqdbyfkhjp34acxxdw6bu4ywzqf47wpna7nv887fnc4nee2mmeanrfp8d";
-        
-        const userId = "user_" + Math.floor(Math.random() * 100000);
-        const userName = "Customer " + userId.split('_')[1];
+        // Free Public Realtime Database Config
+        const firebaseConfig = {
+            databaseURL: "https://shine-store-chat-default-rtdb.firebaseio.com/"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
 
-        let client, channel;
+        const userId = "User_" + Math.floor(Math.random() * 10000);
 
-        // Valid JWT Token Generator for Stream PROD Mode
-        async function createJwtToken(targetUserId, secret) {
-            const header = { alg: "HS256", typ: "JWT" };
-            const payload = { user_id: targetUserId };
-
-            const base64Url = (str) => {
-                return btoa(str).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-            };
-
-            const encodedHeader = base64Url(JSON.stringify(header));
-            const encodedPayload = base64Url(JSON.stringify(payload));
-            const dataToSign = `${encodedHeader}.${encodedPayload}`;
-
-            const enc = new TextEncoder();
-            const key = await crypto.subtle.importKey(
-                "raw",
-                enc.encode(secret),
-                { name: "HMAC", hash: "SHA-256" },
-                false,
-                ["sign"]
-            );
-
-            const signature = await crypto.subtle.sign("HMAC", key, enc.encode(dataToSign));
-            const base64UrlSignature = btoa(String.fromCharCode(...new Uint8Array(signature)))
-                .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-
-            return `${dataToSign}.${base64UrlSignature}`;
-        }
-
-        async function initChat() {
-            try {
-                client = StreamChat.getInstance(API_KEY);
-                
-                // Create valid JWT token dynamically
-                const token = await createJwtToken(userId, API_SECRET);
-
-                await client.connectUser({ id: userId, name: userName }, token);
-
-                channel = client.channel('messaging', 'shine_store_public', {
-                    name: 'General Customer Support'
-                });
-
-                await channel.watch();
-
-                document.getElementById('status').innerText = "Online 🟢";
-                document.getElementById('status').className = "text-xs bg-green-500 px-2 py-1 rounded-full";
-
-                channel.on('message.new', event => renderMessage(event.message));
-
-                const state = await channel.watch();
-                document.getElementById('chat-box').innerHTML = '';
-                state.messages.forEach(msg => renderMessage(msg));
-
-            } catch (err) {
-                console.error("Chat Init Error:", err);
-                document.getElementById('status').innerText = "Error 🔴";
-            }
-        }
-
-        function handleFileSelect() {
-            const fileInput = document.getElementById('file-input');
-            const fileNameDisplay = document.getElementById('file-name-display');
-            if (fileInput.files.length > 0) {
-                fileNameDisplay.innerText = "ရွေးထားသော ဖိုင်: " + fileInput.files[0].name;
-                fileNameDisplay.classList.remove('hidden');
-            } else {
-                fileNameDisplay.classList.add('hidden');
-            }
-        }
-
-        async function sendMessage() {
+        function sendMessage() {
             const input = document.getElementById('message-input');
-            const fileInput = document.getElementById('file-input');
-            const sendBtn = document.getElementById('send-btn');
             const text = input.value.trim();
-            const file = fileInput.files[0];
+            if (!text) return;
 
-            if (!text && !file) return;
+            database.ref("messages").push({
+                sender: userId,
+                text: text,
+                role: "customer",
+                timestamp: Date.now()
+            });
 
-            sendBtn.disabled = true;
-            sendBtn.innerText = "ပို့နေသည်...";
-
-            try {
-                let attachments = [];
-                if (file) {
-                    let response;
-                    if (file.type.startsWith('image/')) {
-                        response = await channel.sendImage(file);
-                        attachments.push({ type: 'image', image_url: response.file });
-                    } else if (file.type.startsWith('video/')) {
-                        response = await channel.sendFile(file);
-                        attachments.push({ type: 'video', asset_url: response.file });
-                    }
-                }
-
-                await channel.sendMessage({ text: text, attachments: attachments });
-                input.value = "";
-                fileInput.value = "";
-                document.getElementById('file-name-display').classList.add('hidden');
-
-            } catch (error) {
-                alert("စာပို့မရပါ၊ ထပ်မံကြိုးစားပါ။");
-                console.error(error);
-            } finally {
-                sendBtn.disabled = false;
-                sendBtn.innerText = "ပို့မည်";
-            }
+            input.value = "";
         }
 
-        function renderMessage(msg) {
+        database.ref("messages").on("child_added", (snapshot) => {
+            const msg = snapshot.val();
             const chatBox = document.getElementById('chat-box');
-            const isMe = msg.user.id === userId;
+            const isMe = msg.sender === userId;
+
             const msgDiv = document.createElement('div');
             msgDiv.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'}`;
-
-            let mediaHTML = '';
-            if (msg.attachments && msg.attachments.length > 0) {
-                msg.attachments.forEach(att => {
-                    if (att.type === 'image' || att.image_url) {
-                        mediaHTML += `<img src="${att.image_url || att.asset_url}" class="max-w-xs rounded-lg my-1 shadow">`;
-                    } else if (att.type === 'video' || att.asset_url) {
-                        mediaHTML += `<video controls src="${att.asset_url}" class="max-w-xs rounded-lg my-1 shadow"></video>`;
-                    }
-                });
-            }
-
             msgDiv.innerHTML = `
-                <span class="text-xs text-gray-400 mb-1">${msg.user.name || msg.user.id}</span>
-                <div class="${isMe ? 'bg-blue-600 text-white' : 'bg-white text-gray-800'} p-3 rounded-xl max-w-xs text-sm shadow">
-                    ${mediaHTML}
-                    ${msg.text ? `<div>${msg.text}</div>` : ''}
+                <span class="text-xs text-gray-400 mb-1">${msg.role === 'owner' ? '👑 Owner' : msg.sender}</span>
+                <div class="${isMe ? 'bg-blue-600 text-white' : (msg.role === 'owner' ? 'bg-green-600 text-white' : 'bg-white text-gray-800')} p-3 rounded-xl max-w-xs text-sm shadow">
+                    ${msg.text}
                 </div>
             `;
-
             chatBox.appendChild(msgDiv);
             chatBox.scrollTop = chatBox.scrollHeight;
-        }
-
-        initChat();
+        });
     </script>
 </body>
 </html>
