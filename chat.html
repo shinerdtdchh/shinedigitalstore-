@@ -3,37 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customer Chat - Shine Store</title>
+    <title>Chat with Shine Store</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
-<body class="bg-gray-100 h-screen flex flex-col">
+<body class="bg-slate-100 h-screen flex justify-center items-center font-sans">
 
-    <div class="bg-blue-600 text-white p-4 font-bold text-center text-lg shadow-md flex justify-between items-center px-6">
-        <span>💬 Shine Digital Store Support</span>
-        <span id="status" class="text-xs bg-green-500 px-2 py-1 rounded-full">Online 🟢</span>
-    </div>
+    <!-- Chat Card Wrapper -->
+    <div class="w-full max-w-md h-full md:h-[650px] bg-white md:rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+        
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 flex items-center justify-between shadow-md">
+            <div class="flex items-center space-x-3">
+                <div class="relative">
+                    <div class="w-10 h-10 rounded-full bg-white text-blue-600 font-bold flex items-center justify-center text-lg shadow">
+                        🛍️
+                    </div>
+                    <span class="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></span>
+                </div>
+                <div>
+                    <h2 class="font-bold text-base leading-tight">Shine Digital Store</h2>
+                    <p class="text-xs text-blue-100 flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 bg-green-300 rounded-full animate-pulse"></span> Online Support
+                    </p>
+                </div>
+            </div>
+        </div>
 
-    <div id="chat-box" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+        <!-- Chat Messages Area -->
+        <div id="chat-box" class="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50">
+            <!-- Messages will load here -->
+        </div>
 
-    <div class="bg-white p-3 border-t flex space-x-2">
-        <input type="text" id="message-input" placeholder="စာရိုက်ပါ..." class="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
-        <button onclick="sendMessage()" id="send-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2 rounded-lg text-sm transition">
-            ပို့မည်
-        </button>
+        <!-- Input Area -->
+        <div class="bg-white p-3 border-t border-slate-200 flex items-center space-x-2">
+            <input type="text" id="message-input" onkeypress="handleKeyPress(event)" placeholder="စာတို ရိုက်ထည့်ပါ..." class="flex-1 bg-slate-100 text-slate-800 border border-slate-300 rounded-full px-5 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:bg-white transition">
+            <button onclick="sendMessage()" class="bg-blue-600 hover:bg-blue-700 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition active:scale-95">
+                <i class="fa-solid fa-paper-plane text-sm"></i>
+            </button>
+        </div>
     </div>
 
     <script>
-        // Free Public Realtime Database Config
         const firebaseConfig = {
             databaseURL: "https://shine-store-chat-default-rtdb.firebaseio.com/"
         };
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        const userId = "User_" + Math.floor(Math.random() * 10000);
+        // LocalStorage သုံးပြီး Customer အကောင့်စွဲမြဲအောင် လုပ်ထားခြင်း
+        let userId = localStorage.getItem("shine_chat_user_id");
+        if (!userId) {
+            userId = "User_" + Math.floor(1000 + Math.random() * 9000);
+            localStorage.setItem("shine_chat_user_id", userId);
+        }
+
+        function handleKeyPress(e) {
+            if (e.key === 'Enter') sendMessage();
+        }
 
         function sendMessage() {
             const input = document.getElementById('message-input');
@@ -54,15 +83,27 @@
             const msg = snapshot.val();
             const chatBox = document.getElementById('chat-box');
             const isMe = msg.sender === userId;
+            const isOwner = msg.role === 'owner';
+
+            const timeStr = new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
             const msgDiv = document.createElement('div');
-            msgDiv.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'}`;
+            msgDiv.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} mb-1`;
+
             msgDiv.innerHTML = `
-                <span class="text-xs text-gray-400 mb-1">${msg.role === 'owner' ? '👑 Owner' : msg.sender}</span>
-                <div class="${isMe ? 'bg-blue-600 text-white' : (msg.role === 'owner' ? 'bg-green-600 text-white' : 'bg-white text-gray-800')} p-3 rounded-xl max-w-xs text-sm shadow">
+                <span class="text-[10px] text-slate-400 px-1 mb-0.5">
+                    ${isOwner ? '👑 Shine Store' : (isMe ? 'သင်' : msg.sender)}
+                </span>
+                <div class="max-w-[78%] px-4 py-2.5 rounded-2xl text-sm shadow-sm ${
+                    isMe 
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-br-none' 
+                    : (isOwner ? 'bg-indigo-600 text-white rounded-bl-none font-medium' : 'bg-white text-slate-800 border border-slate-200 rounded-bl-none')
+                }">
                     ${msg.text}
                 </div>
+                <span class="text-[9px] text-slate-400 px-1 mt-0.5">${timeStr}</span>
             `;
+
             chatBox.appendChild(msgDiv);
             chatBox.scrollTop = chatBox.scrollHeight;
         });
