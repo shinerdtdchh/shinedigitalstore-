@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Profile - Shine Store</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Stream Chat SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/stream-chat"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex justify-center items-center font-sans p-4">
@@ -22,7 +24,7 @@
 
         <!-- User Info -->
         <h2 id="user-name" class="text-xl font-bold text-slate-100">Customer Name</h2>
-        <p id="user-id" class="text-xs text-cyan-400 font-mono mt-1">ID: User_0000</p>
+        <p id="user-id" class="text-xs text-cyan-400 font-mono mt-1">ID: Loading...</p>
 
         <!-- Details Card -->
         <div class="w-full bg-slate-900/60 rounded-2xl p-4 my-6 space-y-3 border border-slate-700/50">
@@ -31,8 +33,8 @@
                 <span class="text-green-400 font-semibold">Active Member</span>
             </div>
             <div class="flex justify-between text-xs">
-                <span class="text-slate-400">Support Access</span>
-                <span class="text-slate-200">24/7 Available</span>
+                <span class="text-slate-400">Stream Status</span>
+                <span id="stream-status" class="text-cyan-400">Checking...</span>
             </div>
         </div>
 
@@ -44,7 +46,7 @@
                 <span>Support Chat သို့သွားရန်</span>
             </a>
 
-            <!-- Log Out Button -->
+            <!-- 🚪 Log Out Button -->
             <button onclick="handleLogout()" class="w-full bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white font-bold py-3 rounded-2xl flex items-center justify-center space-x-2 transition active:scale-95">
                 <i class="fa-solid fa-right-from-bracket"></i>
                 <span>အကောင့်မှ ထွက်မည် (Log Out)</span>
@@ -54,23 +56,41 @@
     </div>
 
     <script>
-        // 1. User Data ရယူခြင်း
-        const savedUserId = localStorage.getItem("shine_chat_user_id") || "User_" + Math.floor(1000 + Math.random() * 9000);
-        
-        // Display Info
-        document.getElementById("user-id").innerText = "ID: " + savedUserId;
-        document.getElementById("user-name").innerText = savedUserId;
-        document.getElementById("user-avatar").src = "https://api.dicebear.com/7.x/bottts/svg?seed=" + savedUserId;
+        // 🔑 သင့် Stream API Key ထည့်ရန်
+        const STREAM_API_KEY = "YOUR_STREAM_API_KEY";
 
-        // 2. Log Out Function
-        function handleLogout() {
-            // Confirm Alert ပြခြင်း
+        const savedUserId = localStorage.getItem("shine_chat_user_id");
+
+        // User Data ရှိမရှိ စစ်ဆေးခြင်း
+        if (savedUserId) {
+            document.getElementById("user-id").innerText = "ID: " + savedUserId;
+            document.getElementById("user-name").innerText = savedUserId;
+            document.getElementById("user-avatar").src = "https://api.dicebear.com/7.x/bottts/svg?seed=" + savedUserId;
+            document.getElementById("stream-status").innerText = "Connected";
+        } else {
+            document.getElementById("user-id").innerText = "Not Logged In";
+            document.getElementById("stream-status").innerText = "Disconnected";
+            document.getElementById("stream-status").className = "text-red-400";
+        }
+
+        // 🚪 Stream Disconnect + Log Out Function
+        async function handleLogout() {
             if (confirm("အကောင့်မှ ထွက်မှာ သေချာပါသလား?")) {
-                // LocalStorage ထဲက User Session များကို ရှင်းထုတ်ခြင်း
+                try {
+                    // 1. Stream Connection ကို ဖြုတ်ခြင်း
+                    if (typeof StreamChat !== 'undefined' && STREAM_API_KEY !== "YOUR_STREAM_API_KEY") {
+                        const client = StreamChat.getInstance(STREAM_API_KEY);
+                        await client.disconnectUser();
+                    }
+                } catch (e) {
+                    console.log("Stream Disconnect Info:", e);
+                }
+
+                // 2. LocalStorage ထဲက User ID ကို ဖျက်ခြင်း
                 localStorage.removeItem("shine_chat_user_id");
-                
-                // Login သို့မဟုတ် Home Page သို့ ပြန်ညွှန်းခြင်း
-                window.location.href = "index.html"; // မိမိ Login/Home Page ရဲ့ file name ပြောင်းပေးနိုင်ပါတယ်
+
+                // 3. Home/Login Page သို့ ပြန်ညွှန်းခြင်း
+                window.location.href = "index.html";
             }
         }
     </script>
