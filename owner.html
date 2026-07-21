@@ -6,21 +6,17 @@
     <title>Owner Dashboard - Shine Store Chat</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/stream-chat"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-sha256/0.9.0/sha256.min.js"></script>
 </head>
 <body class="bg-gray-900 text-white h-screen flex flex-col">
 
-    <!-- Header -->
     <div class="bg-gray-800 p-4 border-b border-gray-700 flex justify-between items-center px-6">
         <h1 class="text-xl font-bold text-blue-400">👑 Admin Chat Control Center</h1>
-        <span id="status" class="text-xs bg-yellow-600 px-3 py-1 rounded-full font-semibold">Connecting Owner Account...</span>
+        <span id="status" class="text-xs bg-yellow-600 px-3 py-1 rounded-full font-semibold">Connecting Owner...</span>
     </div>
 
-    <!-- Chat Messages Box -->
-    <div id="chat-box" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-950">
-        <!-- Incoming Customer Messages & Photos/Videos -->
-    </div>
+    <div id="chat-box" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-950"></div>
 
-    <!-- Owner Reply Input Section -->
     <div class="bg-gray-800 p-4 border-t border-gray-700 flex flex-col space-y-2">
         <div id="file-name-display" class="hidden text-xs text-blue-400 font-semibold px-2"></div>
         <div class="flex items-center space-x-3">
@@ -37,42 +33,41 @@
 
     <script>
         const API_KEY = "srcxzrwfghdq";
+        const API_SECRET = "ap663vskqdbyfkhjp34acxxdw6bu4ywzqf47wpna7nv887fnc4nee2mmeanrfp8d";
         
-        // Owner Specific ID & Name
         const ownerId = "owner_admin_shine";
         const ownerName = "Shop Owner (Shine Store)";
 
-        let client;
-        let channel;
+        let client, channel;
+
+        function generateToken(targetUserId) {
+            const header = { alg: "HS256", typ: "JWT" };
+            const payload = { user_id: targetUserId };
+            const b64Header = btoa(JSON.stringify(header)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+            const b64Payload = btoa(JSON.stringify(payload)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+            const signature = sha256.hmac(API_SECRET, b64Header + "." + b64Payload);
+            const b64Signature = btoa(signature.match(/\w{2}/g).map(a => String.fromCharCode(parseInt(a, 16))).join(''))
+                .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+            return `${b64Header}.${b64Payload}.${b64Signature}`;
+        }
 
         async function initAdminChat() {
             try {
                 client = StreamChat.getInstance(API_KEY);
+                const ownerToken = generateToken(ownerId);
 
-                // Connect as Owner
-                await client.connectUser(
-                    { id: ownerId, name: ownerName },
-                    client.devToken(ownerId)
-                );
+                await client.connectUser({ id: ownerId, name: ownerName }, ownerToken);
 
-                // Connect to the same channel as customers
-                channel = client.channel('messaging', 'shine_store_public', {
-                    name: 'General Customer Support'
-                });
-
+                channel = client.channel('messaging', 'shine_store_public', { name: 'General Customer Support' });
                 await channel.watch();
 
                 document.getElementById('status').innerText = "Owner Active 🟢";
                 document.getElementById('status').className = "text-xs bg-green-600 px-3 py-1 rounded-full font-semibold";
 
-                // Listen for real-time customer messages
-                channel.on('message.new', event => {
-                    renderMessage(event.message);
-                });
+                channel.on('message.new', event => renderMessage(event.message));
 
-                // Load existing chat history
                 const state = await channel.watch();
-                document.getElementById('chat-box').innerHTML = ''; // Clear box
+                document.getElementById('chat-box').innerHTML = '';
                 state.messages.forEach(msg => renderMessage(msg));
 
             } catch (err) {
@@ -96,7 +91,6 @@
             const input = document.getElementById('message-input');
             const fileInput = document.getElementById('file-input');
             const sendBtn = document.getElementById('send-btn');
-            
             const text = input.value.trim();
             const file = fileInput.files[0];
 
@@ -107,7 +101,6 @@
 
             try {
                 let attachments = [];
-
                 if (file) {
                     let response;
                     if (file.type.startsWith('image/')) {
@@ -119,17 +112,13 @@
                     }
                 }
 
-                await channel.sendMessage({
-                    text: text,
-                    attachments: attachments
-                });
-
+                await channel.sendMessage({ text: text, attachments: attachments });
                 input.value = "";
                 fileInput.value = "";
                 document.getElementById('file-name-display').classList.add('hidden');
 
             } catch (error) {
-                alert("စာပို့မရပါ၊ ခဏနားပြီး ပြန်ကြိုးစားပါဗျာ။");
+                alert("စာပို့မရပါခင်ဗျာ။");
                 console.error(error);
             } finally {
                 sendBtn.disabled = false;
@@ -140,7 +129,6 @@
         function renderMessage(msg) {
             const chatBox = document.getElementById('chat-box');
             const isOwner = msg.user.id === ownerId;
-
             const msgDiv = document.createElement('div');
             msgDiv.className = `flex flex-col ${isOwner ? 'items-end' : 'items-start'}`;
 
