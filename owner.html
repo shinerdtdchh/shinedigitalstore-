@@ -3,67 +3,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Owner Dashboard - Shine Store Chat</title>
+    <title>Admin Multi-Department Control</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 </head>
-<body class="bg-gray-900 text-white h-screen flex flex-col">
+<body class="bg-slate-950 text-slate-100 h-screen flex justify-center items-center font-sans p-2">
 
-    <div class="bg-gray-800 p-4 border-b border-gray-700 flex justify-between items-center px-6">
-        <h1 class="text-xl font-bold text-blue-400">👑 Admin Chat Center</h1>
-        <span class="text-xs bg-green-600 px-3 py-1 rounded-full font-semibold">Active 🟢</span>
-    </div>
+    <div class="w-full max-w-5xl h-[700px] bg-slate-900 rounded-2xl border border-slate-800 shadow-2xl flex overflow-hidden">
+        
+        <!-- LEFT: Customer Inbox List -->
+        <div class="w-1/3 bg-slate-900 border-r border-slate-800 flex flex-col">
+            <div class="p-4 border-b border-slate-800 bg-slate-900/50">
+                <label class="text-[10px] text-amber-400 font-bold uppercase tracking-wider">သင်၏ Admin နယ်ပယ် ရွေးပါ-</label>
+                <select id="admin-category-select" onchange="switchDepartment()" class="w-full mt-1.5 bg-slate-800 text-slate-100 font-bold text-xs border border-amber-500/50 rounded-xl px-3 py-2 focus:outline-none">
+                    <option value="acc_sales">🛒 အကောင့် ဝယ်/ရောင်း Admin</option>
+                    <option value="course_admin">🎓 သင်တန်းအပ်နှံရန် Admin</option>
+                    <option value="tech_support">🛠️ နည်းပညာ ကူညီရေး Admin</option>
+                    <option value="general_help">💬 အထွေထွေ မေးမြန်းရန် Admin</option>
+                </select>
+            </div>
 
-    <div id="chat-box" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-950"></div>
+            <div id="customer-list" class="flex-1 overflow-y-auto divide-y divide-slate-800/50">
+                <!-- Customer Accounts for this Category will load here -->
+            </div>
+        </div>
 
-    <div class="bg-gray-800 p-4 border-t border-gray-700 flex space-x-3">
-        <input type="text" id="message-input" placeholder="Customer ထံ ပြန်စာ ရိုက်ရန်..." class="flex-1 bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500">
-        <button onclick="sendOwnerMessage()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-6 py-2.5 rounded-lg text-sm transition">
-            ပြန်စာ ပို့မည်
-        </button>
+        <!-- RIGHT: Chat Window -->
+        <div class="w-2/3 bg-slate-950 flex flex-col">
+            <div class="p-4 bg-slate-900 border-b border-slate-800 flex justify-between items-center">
+                <div>
+                    <h3 id="active-user-title" class="font-bold text-slate-100">Customer ကို ရွေးပါ</h3>
+                    <p id="active-user-subtitle" class="text-xs text-slate-500">မရွေးရသေးပါ</p>
+                </div>
+            </div>
+
+            <div id="chat-box" class="flex-1 overflow-y-auto p-4 space-y-3">
+                <div class="text-center text-slate-600 text-sm mt-10">ဘယ်ဘက်မှ စာပို့ထားသော Customer အကောင့်ကို နှိပ်ပါ</div>
+            </div>
+
+            <div class="p-3 bg-slate-900 border-t border-slate-800 flex items-center space-x-2">
+                <input type="text" id="message-input" onkeypress="if(event.key==='Enter') sendOwnerResponse()" placeholder="စာပြန်ရန်..." class="flex-1 bg-slate-800 text-white border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-amber-500" disabled>
+                <button onclick="sendOwnerResponse()" id="send-btn" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-5 py-2.5 rounded-xl text-sm transition" disabled>
+                    စာပို့မည်
+                </button>
+            </div>
+        </div>
+
     </div>
 
     <script>
-        const firebaseConfig = {
-            databaseURL: "https://shine-store-chat-default-rtdb.firebaseio.com/"
-        };
+        const firebaseConfig = { databaseURL: "https://shine-store-chat-default-rtdb.firebaseio.com/" };
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        function sendOwnerMessage() {
+        let currentCategory = "acc_sales";
+        let currentSelectedUser = null;
+        let chatListener = null;
+
+        function switchDepartment() {
+            currentCategory = document.getElementById('admin-category-select').value;
+            currentSelectedUser = null;
+            document.getElementById('active-user-title').innerText = "Customer ကို ရွေးပါ";
+            document.getElementById('active-user-subtitle').innerText = "မရွေးရသေးပါ";
+            document.getElementById('message-input').disabled = true;
+            document.getElementById('send-btn').disabled = true;
+            document.getElementById('chat-box').innerHTML = '<div class="text-center text-slate-600 text-sm mt-10">ဘယ်ဘက်မှ စာပို့ထားသော Customer အကောင့်ကို နှိပ်ပါ</div>';
+
+            loadCategoryInbox();
+        }
+
+        function loadCategoryInbox() {
+            database.ref("category_inbox/" + currentCategory).on("value", (snapshot) => {
+                const listContainer = document.getElementById('customer-list');
+                listContainer.innerHTML = '';
+
+                if (!snapshot.exists()) {
+                    listContainer.innerHTML = `<div class="p-4 text-xs text-slate-500 text-center">ဒီနယ်ပယ်အတွက် စာမရှိသေးပါ</div>`;
+                    return;
+                }
+
+                snapshot.forEach((child) => {
+                    const user = child.val();
+                    const userDiv = document.createElement('div');
+                    userDiv.className = `p-3.5 hover:bg-slate-800/80 cursor-pointer transition flex items-center space-x-3 ${currentSelectedUser === user.userId ? 'bg-slate-800 border-l-4 border-amber-400' : ''}`;
+                    userDiv.onclick = () => selectCustomer(user.userId);
+
+                    const timeStr = new Date(user.lastTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                    userDiv.innerHTML = `
+                        <div class="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center font-bold text-slate-300 text-sm border border-slate-600">
+                            👤
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex justify-between items-baseline">
+                                <h4 class="text-xs font-bold text-slate-200 truncate">${user.userId}</h4>
+                                <span class="text-[9px] text-slate-500">${timeStr}</span>
+                            </div>
+                            <p class="text-[11px] text-slate-400 truncate mt-0.5">${user.lastMessage}</p>
+                        </div>
+                    `;
+                    listContainer.appendChild(userDiv);
+                });
+            });
+        }
+
+        function selectCustomer(targetUserId) {
+            currentSelectedUser = targetUserId;
+            document.getElementById('active-user-title').innerText = "💬 " + targetUserId;
+            document.getElementById('active-user-subtitle').innerText = "နယ်ပယ်: " + currentCategory;
+            
+            document.getElementById('message-input').disabled = false;
+            document.getElementById('send-btn').disabled = false;
+
+            const chatBox = document.getElementById('chat-box');
+            chatBox.innerHTML = '';
+
+            if (chatListener) database.ref("category_rooms/" + currentCategory + "/" + currentSelectedUser).off();
+
+            chatListener = database.ref("category_rooms/" + currentCategory + "/" + currentSelectedUser).on("child_added", (snapshot) => {
+                const msg = snapshot.val();
+                const isOwner = msg.role === 'owner';
+                const timeStr = new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                const msgDiv = document.createElement('div');
+                msgDiv.className = `flex flex-col ${isOwner ? 'items-end' : 'items-start'} mb-1`;
+                msgDiv.innerHTML = `
+                    <span class="text-[10px] ${isOwner ? 'text-amber-400 font-bold' : 'text-slate-400'} px-1 mb-0.5">
+                        ${isOwner ? '👑 ' + msg.sender : '👤 ' + msg.sender}
+                    </span>
+                    <div class="max-w-[80%] px-3.5 py-2 rounded-2xl text-sm shadow ${isOwner ? 'bg-amber-500 text-slate-950 font-semibold rounded-br-none' : 'bg-slate-800 text-slate-100 rounded-bl-none border border-slate-700'}">
+                        ${msg.text}
+                    </div>
+                    <span class="text-[9px] text-slate-500 px-1 mt-0.5">${timeStr}</span>
+                `;
+                chatBox.appendChild(msgDiv);
+                chatBox.scrollTop = chatBox.scrollHeight;
+            });
+        }
+
+        function sendOwnerResponse() {
+            if (!currentSelectedUser) return;
+
             const input = document.getElementById('message-input');
             const text = input.value.trim();
             if (!text) return;
 
-            database.ref("messages").push({
-                sender: "Shop Owner",
+            const timeNow = Date.now();
+
+            database.ref("category_rooms/" + currentCategory + "/" + currentSelectedUser).push({
+                sender: "Admin (" + currentCategory + ")",
                 text: text,
                 role: "owner",
-                timestamp: Date.now()
+                timestamp: timeNow
+            });
+
+            database.ref("category_inbox/" + currentCategory + "/" + currentSelectedUser).update({
+                lastMessage: "[Admin]: " + text,
+                lastTime: timeNow
             });
 
             input.value = "";
         }
 
-        database.ref("messages").on("child_added", (snapshot) => {
-            const msg = snapshot.val();
-            const chatBox = document.getElementById('chat-box');
-            const isOwner = msg.role === 'owner';
-
-            const msgDiv = document.createElement('div');
-            msgDiv.className = `flex flex-col ${isOwner ? 'items-end' : 'items-start'}`;
-            msgDiv.innerHTML = `
-                <span class="text-xs mb-1 ${isOwner ? 'text-blue-400 font-bold' : 'text-green-400 font-bold'}">
-                    ${isOwner ? '👑 ' + msg.sender : '👤 ' + msg.sender}
-                </span>
-                <div class="${isOwner ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-100 border border-gray-700'} p-3 rounded-xl max-w-sm text-sm shadow">
-                    ${msg.text}
-                </div>
-            `;
-            chatBox.appendChild(msgDiv);
-            chatBox.scrollTop = chatBox.scrollHeight;
-        });
+        loadCategoryInbox();
     </script>
 </body>
 </html>
