@@ -5,161 +5,65 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Owner Dashboard - Shine Store Chat</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/stream-chat"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-sha256/0.9.0/sha256.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 </head>
 <body class="bg-gray-900 text-white h-screen flex flex-col">
 
     <div class="bg-gray-800 p-4 border-b border-gray-700 flex justify-between items-center px-6">
-        <h1 class="text-xl font-bold text-blue-400">👑 Admin Chat Control Center</h1>
-        <span id="status" class="text-xs bg-yellow-600 px-3 py-1 rounded-full font-semibold">Connecting Owner...</span>
+        <h1 class="text-xl font-bold text-blue-400">👑 Admin Chat Center</h1>
+        <span class="text-xs bg-green-600 px-3 py-1 rounded-full font-semibold">Active 🟢</span>
     </div>
 
     <div id="chat-box" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-950"></div>
 
-    <div class="bg-gray-800 p-4 border-t border-gray-700 flex flex-col space-y-2">
-        <div id="file-name-display" class="hidden text-xs text-blue-400 font-semibold px-2"></div>
-        <div class="flex items-center space-x-3">
-            <label class="cursor-pointer bg-gray-700 hover:bg-gray-600 text-gray-200 p-2.5 rounded-lg text-lg">
-                📷 / 🎥
-                <input type="file" id="file-input" class="hidden" accept="image/*,video/*" onchange="handleFileSelect()">
-            </label>
-            <input type="text" id="message-input" placeholder="Customer ထံ ပြန်စာ ရိုက်ရန်..." class="flex-1 bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500">
-            <button onclick="sendOwnerMessage()" id="send-btn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-6 py-2.5 rounded-lg text-sm transition">
-                ပြန်စာ ပို့မည်
-            </button>
-        </div>
+    <div class="bg-gray-800 p-4 border-t border-gray-700 flex space-x-3">
+        <input type="text" id="message-input" placeholder="Customer ထံ ပြန်စာ ရိုက်ရန်..." class="flex-1 bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500">
+        <button onclick="sendOwnerMessage()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-6 py-2.5 rounded-lg text-sm transition">
+            ပြန်စာ ပို့မည်
+        </button>
     </div>
 
     <script>
-        const API_KEY = "srcxzrwfghdq";
-        const API_SECRET = "ap663vskqdbyfkhjp34acxxdw6bu4ywzqf47wpna7nv887fnc4nee2mmeanrfp8d";
-        
-        const ownerId = "owner_admin_shine";
-        const ownerName = "Shop Owner (Shine Store)";
+        const firebaseConfig = {
+            databaseURL: "https://shine-store-chat-default-rtdb.firebaseio.com/"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
 
-        let client, channel;
-
-        function generateToken(targetUserId) {
-            const header = { alg: "HS256", typ: "JWT" };
-            const payload = { user_id: targetUserId };
-            const b64Header = btoa(JSON.stringify(header)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-            const b64Payload = btoa(JSON.stringify(payload)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-            const signature = sha256.hmac(API_SECRET, b64Header + "." + b64Payload);
-            const b64Signature = btoa(signature.match(/\w{2}/g).map(a => String.fromCharCode(parseInt(a, 16))).join(''))
-                .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-            return `${b64Header}.${b64Payload}.${b64Signature}`;
-        }
-
-        async function initAdminChat() {
-            try {
-                client = StreamChat.getInstance(API_KEY);
-                const ownerToken = generateToken(ownerId);
-
-                await client.connectUser({ id: ownerId, name: ownerName }, ownerToken);
-
-                channel = client.channel('messaging', 'shine_store_public', { name: 'General Customer Support' });
-                await channel.watch();
-
-                document.getElementById('status').innerText = "Owner Active 🟢";
-                document.getElementById('status').className = "text-xs bg-green-600 px-3 py-1 rounded-full font-semibold";
-
-                channel.on('message.new', event => renderMessage(event.message));
-
-                const state = await channel.watch();
-                document.getElementById('chat-box').innerHTML = '';
-                state.messages.forEach(msg => renderMessage(msg));
-
-            } catch (err) {
-                console.error("Owner Chat Init Error:", err);
-                document.getElementById('status').innerText = "Error Connecting 🔴";
-            }
-        }
-
-        function handleFileSelect() {
-            const fileInput = document.getElementById('file-input');
-            const fileNameDisplay = document.getElementById('file-name-display');
-            if (fileInput.files.length > 0) {
-                fileNameDisplay.innerText = "📁 တွဲဖက်ထားသော ဖိုင်: " + fileInput.files[0].name;
-                fileNameDisplay.classList.remove('hidden');
-            } else {
-                fileNameDisplay.classList.add('hidden');
-            }
-        }
-
-        async function sendOwnerMessage() {
+        function sendOwnerMessage() {
             const input = document.getElementById('message-input');
-            const fileInput = document.getElementById('file-input');
-            const sendBtn = document.getElementById('send-btn');
             const text = input.value.trim();
-            const file = fileInput.files[0];
+            if (!text) return;
 
-            if (!text && !file) return;
+            database.ref("messages").push({
+                sender: "Shop Owner",
+                text: text,
+                role: "owner",
+                timestamp: Date.now()
+            });
 
-            sendBtn.disabled = true;
-            sendBtn.innerText = "ပို့နေသည်...";
-
-            try {
-                let attachments = [];
-                if (file) {
-                    let response;
-                    if (file.type.startsWith('image/')) {
-                        response = await channel.sendImage(file);
-                        attachments.push({ type: 'image', image_url: response.file });
-                    } else if (file.type.startsWith('video/')) {
-                        response = await channel.sendFile(file);
-                        attachments.push({ type: 'video', asset_url: response.file });
-                    }
-                }
-
-                await channel.sendMessage({ text: text, attachments: attachments });
-                input.value = "";
-                fileInput.value = "";
-                document.getElementById('file-name-display').classList.add('hidden');
-
-            } catch (error) {
-                alert("စာပို့မရပါခင်ဗျာ။");
-                console.error(error);
-            } finally {
-                sendBtn.disabled = false;
-                sendBtn.innerText = "ပြန်စာ ပို့မည်";
-            }
+            input.value = "";
         }
 
-        function renderMessage(msg) {
+        database.ref("messages").on("child_added", (snapshot) => {
+            const msg = snapshot.val();
             const chatBox = document.getElementById('chat-box');
-            const isOwner = msg.user.id === ownerId;
+            const isOwner = msg.role === 'owner';
+
             const msgDiv = document.createElement('div');
             msgDiv.className = `flex flex-col ${isOwner ? 'items-end' : 'items-start'}`;
-
-            let mediaHTML = '';
-            if (msg.attachments && msg.attachments.length > 0) {
-                msg.attachments.forEach(att => {
-                    if (att.type === 'image' || att.image_url) {
-                        mediaHTML += `<img src="${att.image_url || att.asset_url}" class="max-w-xs rounded-lg my-1 border border-gray-700 shadow">`;
-                    } else if (att.type === 'video' || att.asset_url) {
-                        mediaHTML += `<video controls src="${att.asset_url}" class="max-w-xs rounded-lg my-1 border border-gray-700 shadow"></video>`;
-                    }
-                });
-            }
-
             msgDiv.innerHTML = `
-                <div class="flex items-center space-x-2 mb-1">
-                    <span class="text-xs ${isOwner ? 'text-blue-400 font-bold' : 'text-green-400 font-bold'}">
-                        ${isOwner ? '👑 ' + msg.user.name : '👤 ' + (msg.user.name || msg.user.id)}
-                    </span>
-                </div>
+                <span class="text-xs mb-1 ${isOwner ? 'text-blue-400 font-bold' : 'text-green-400 font-bold'}">
+                    ${isOwner ? '👑 ' + msg.sender : '👤 ' + msg.sender}
+                </span>
                 <div class="${isOwner ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-100 border border-gray-700'} p-3 rounded-xl max-w-sm text-sm shadow">
-                    ${mediaHTML}
-                    ${msg.text ? `<div>${msg.text}</div>` : ''}
+                    ${msg.text}
                 </div>
             `;
-
             chatBox.appendChild(msgDiv);
             chatBox.scrollTop = chatBox.scrollHeight;
-        }
-
-        initAdminChat();
+        });
     </script>
 </body>
 </html>
