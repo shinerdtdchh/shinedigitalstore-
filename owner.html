@@ -1,189 +1,177 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="my">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Owner Dashboard - Shine Store</title>
+    <title>Owner Dashboard - Shine Store Chat</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;900&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Outfit', sans-serif; background: #020617; }
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-    </style>
+    <script src="https://cdn.jsdelivr.net/npm/stream-chat"></script>
 </head>
-<body class="text-white flex items-center justify-center min-h-screen w-full overflow-hidden">
+<body class="bg-gray-900 text-white h-screen flex flex-col">
 
-    <div class="w-full h-screen max-w-lg flex flex-col bg-slate-950/40 border-x border-slate-900/80 relative">
-        
-        <div class="text-center pt-5 pb-3 border-b border-slate-900/80 shrink-0 bg-slate-950/80 backdrop-blur-md">
-            <h1 class="text-base font-black text-red-500 uppercase tracking-widest italic">Owner Console</h1>
-            <p class="text-[10px] text-slate-400">Chatting with: <span id="customer_name_display" class="text-blue-400 font-bold">Loading...</span></p>
-        </div>
-        
-        <div id="chat_scroll_box" class="flex-1 overflow-y-auto space-y-3.5 p-4 bg-slate-950/20 flex flex-col scrollbar-hide relative"></div>
-        
-        <div id="typing_box" class="px-4 py-1.5 bg-slate-950/80 backdrop-blur-sm border-t border-slate-900/40 shrink-0 hidden">
-            <div class="flex items-center gap-2">
-                <span class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-bounce"></span>
-                <span class="text-[10px] font-bold tracking-wider text-blue-400 uppercase">Customer is typing...</span>
-            </div>
-        </div>
+    <!-- Header -->
+    <div class="bg-gray-800 p-4 border-b border-gray-700 flex justify-between items-center px-6">
+        <h1 class="text-xl font-bold text-blue-400">👑 Admin Chat Control Center</h1>
+        <span id="status" class="text-xs bg-yellow-600 px-3 py-1 rounded-full font-semibold">Connecting Owner Account...</span>
+    </div>
 
-        <form id="chatForm" class="flex gap-2 p-3 border-t border-slate-900/60 bg-slate-950/90 backdrop-blur-md items-center shrink-0" onsubmit="sendChat(event)" enctype="multipart/form-data">
-            <input type="file" id="chat_file_input" name="chat_files[]" accept="image/*,video/*" multiple class="hidden" onchange="triggerFileSend()">
-            
-            <button type="button" onclick="document.getElementById('chat_file_input').click()" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 p-3.5 rounded-2xl text-slate-400 hover:text-blue-400 shrink-0 flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>
+    <!-- Chat Messages Box -->
+    <div id="chat-box" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-950">
+        <!-- Incoming Customer Messages & Photos/Videos -->
+    </div>
+
+    <!-- Owner Reply Input Section -->
+    <div class="bg-gray-800 p-4 border-t border-gray-700 flex flex-col space-y-2">
+        <div id="file-name-display" class="hidden text-xs text-blue-400 font-semibold px-2"></div>
+        <div class="flex items-center space-x-3">
+            <label class="cursor-pointer bg-gray-700 hover:bg-gray-600 text-gray-200 p-2.5 rounded-lg text-lg">
+                📷 / 🎥
+                <input type="file" id="file-input" class="hidden" accept="image/*,video/*" onchange="handleFileSelect()">
+            </label>
+            <input type="text" id="message-input" placeholder="Customer ထံ ပြန်စာ ရိုက်ရန်..." class="flex-1 bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500">
+            <button onclick="sendOwnerMessage()" id="send-btn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-6 py-2.5 rounded-lg text-sm transition">
+                ပြန်စာ ပို့မည်
             </button>
-            <input type="text" id="owner_chat_msg" placeholder="ဝယ်သူထံ စာပြန်ရန်..." class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-3 text-xs outline-none focus:border-red-500/80 text-white font-medium" autocomplete="off">
-            <button type="submit" class="bg-red-600 px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-wider text-white">REPLY</button>
-        </form>
+        </div>
     </div>
 
     <script>
-        const chatBox = document.getElementById('chat_scroll_box');
-        let shouldScroll = true;
+        const API_KEY = "srcxzrwfghdq";
         
-        // URL Parameter ထဲက ဝယ်သူအမည် (?user=username) ကို ဖတ်ယူခြင်း
-        const urlParams = new URLSearchParams(window.location.search);
-        const target_user = urlParams.get('user') || '';
+        // Owner Specific ID & Name
+        const ownerId = "owner_admin_shine";
+        const ownerName = "Shop Owner (Shine Store)";
 
-        if (!target_user) {
-            document.body.innerHTML = "<div style='color:white; background:#020617; text-align:center; padding-top:50px; font-weight:bold;'>မည်သည့် ဝယ်သူနှင့် စကားပြောမည်ကို ရွေးချယ်ပေးပါ (?user=username)</div>";
-        } else {
-            document.getElementById('customer_name_display').textContent = target_user;
-        }
+        let client;
+        let channel;
 
-        function loadChats() {
-            if (!target_user) return;
-            
-            fetch(`https://shine-chat-api.shineaung6375.workers.dev/?action=get_messages&user=${encodeURIComponent(target_user)}`)
-                .then(res => res.json())
-                .then(data => {
-                    if (!Array.isArray(data)) return;
+        async function initAdminChat() {
+            try {
+                client = StreamChat.getInstance(API_KEY);
 
-                    let chatHtml = "";
-                    data.forEach(msg => {
-                        // ဆိုင်ရှင်ဘက်မှာဖြစ်လို့ sender က owner ဆိုရင် ညာဘက် (Me)၊ မဟုတ်ရင် ဘယ်ဘက် (Customer)
-                        const is_me = (msg.sender === 'owner');
-                        const bg_color = is_me ? 'bg-blue-600 self-end text-right rounded-tr-none text-white' : 'bg-slate-900 border border-slate-800/80 self-start text-left rounded-tl-none text-slate-200';
-                        const align_self = is_me ? 'self-end' : 'self-start';
+                // Connect as Owner
+                await client.connectUser(
+                    { id: ownerId, name: ownerName },
+                    client.devToken(ownerId)
+                );
 
-                        if (msg.media_url) {
-                            const is_video = msg.media_url.match(/\.(mp4|webm|mov)$/i);
-                            chatHtml += `<div class="max-w-[250px] p-1 rounded-2xl shadow-md bg-slate-900/40 border border-slate-800/30 ${align_self}">
-                                <div class="overflow-hidden rounded-xl">`;
-                            if (is_video) {
-                                chatHtml += `<video src="${msg.media_url}" controls class="w-full h-auto rounded-lg"></video>`;
-                            } else {
-                                chatHtml += `<img src="${msg.media_url}" style="width:100%; max-height:250px; object-fit:contain;" class="rounded-lg shadow-sm" onclick="window.open(this.src)" style="cursor:pointer;">`;
-                            }
-                            chatHtml += `</div><div class="text-[8px] opacity-40 flex justify-end items-center px-1.5 mt-1"><span>${msg.time || ''}</span></div></div>`;
-                        } else {
-                            chatHtml += `<div class="max-w-[85%] p-3.5 rounded-2xl text-xs break-all shadow-md ${bg_color}">
-                                <p class="leading-relaxed text-[13px]">${msg.message}</p>
-                                <div class="text-[8px] opacity-40 flex justify-end items-center mt-1.5"><span>${msg.time || ''}</span></div>
-                            </div>`;
-                        }
-                    });
-
-                    const pendingLoaders = chatBox.querySelectorAll('.tg-loading-bubble');
-                    chatBox.innerHTML = chatHtml || "<div class='my-auto text-center px-4 opacity-30'><p class='text-xs'>💬 No conversation yet</p></div>";
-                    
-                    if(pendingLoaders.length > 0) {
-                        pendingLoaders.forEach(el => chatBox.appendChild(el));
-                    }
-                    if(shouldScroll) { chatBox.scrollTop = chatBox.scrollHeight; shouldScroll = false; }
+                // Connect to the same channel as customers
+                channel = client.channel('messaging', 'shine_store_public', {
+                    name: 'General Customer Support'
                 });
+
+                await channel.watch();
+
+                document.getElementById('status').innerText = "Owner Active 🟢";
+                document.getElementById('status').className = "text-xs bg-green-600 px-3 py-1 rounded-full font-semibold";
+
+                // Listen for real-time customer messages
+                channel.on('message.new', event => {
+                    renderMessage(event.message);
+                });
+
+                // Load existing chat history
+                const state = await channel.watch();
+                document.getElementById('chat-box').innerHTML = ''; // Clear box
+                state.messages.forEach(msg => renderMessage(msg));
+
+            } catch (err) {
+                console.error("Owner Chat Init Error:", err);
+                document.getElementById('status').innerText = "Error Connecting 🔴";
+            }
         }
 
-        async function sendChat(e) {
-            e.preventDefault();
-            const msgInput = document.getElementById('owner_chat_msg');
-            const messageText = msgInput.value.trim();
-            if(messageText === "") return;
+        function handleFileSelect() {
+            const fileInput = document.getElementById('file-input');
+            const fileNameDisplay = document.getElementById('file-name-display');
+            if (fileInput.files.length > 0) {
+                fileNameDisplay.innerText = "📁 တွဲဖက်ထားသော ဖိုင်: " + fileInput.files[0].name;
+                fileNameDisplay.classList.remove('hidden');
+            } else {
+                fileNameDisplay.classList.add('hidden');
+            }
+        }
 
-            msgInput.value = "";
+        async function sendOwnerMessage() {
+            const input = document.getElementById('message-input');
+            const fileInput = document.getElementById('file-input');
+            const sendBtn = document.getElementById('send-btn');
+            
+            const text = input.value.trim();
+            const file = fileInput.files[0];
+
+            if (!text && !file) return;
+
+            sendBtn.disabled = true;
+            sendBtn.innerText = "ပို့နေသည်...";
 
             try {
-                const response = await fetch('https://shine-chat-api.shineaung6375.workers.dev/?action=messages', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        username: 'owner',
-                        message: messageText,
-                        media_url: '',
-                        receiver_user: target_user
-                    })
-                });
-                if(response.ok) {
-                    shouldScroll = true;
-                    loadChats();
-                }
-            } catch(err) {
-                console.error(err);
-            }
-        }
+                let attachments = [];
 
-        async function triggerFileSend() {
-            const fileInput = document.getElementById('chat_file_input');
-            if(fileInput.files.length === 0) return;
-
-            const batch_id = 'batch_' + Date.now() + '_' + Math.floor(Math.random() * 9000 + 1000);
-
-            for (let i = 0; i < fileInput.files.length; i++) {
-                const file = fileInput.files[i];
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const loaderHtml = `
-                        <div class='tg-loading-bubble max-w-[250px] p-1 rounded-2xl shadow-md bg-slate-900/40 border border-slate-800/30 self-end relative overflow-hidden opacity-60'>
-                            <div class='relative rounded-xl overflow-hidden flex items-center justify-center' style='width:100%; height:145px;'>
-                                <img src='${e.target.result}' style='width:100%; height:100%; object-fit:cover; filter: blur(1.5px);'>
-                                <div class='absolute inset-0 m-auto w-8 h-8 border-4 border-red-500 border-t-transparent rounded-full animate-spin'></div>
-                            </div>
-                        </div>`;
-                    chatBox.innerHTML += loaderHtml;
-                    chatBox.scrollTop = chatBox.scrollHeight;
-                }
-                reader.readAsDataURL(file);
-
-                try {
-                    const formData = new FormData();
-                    formData.append('file', file);
-
-                    const uploadRes = await fetch('https://shine-chat-api.shineaung6375.workers.dev/?action=upload', {
-                        method: 'POST',
-                        body: formData
-                    });
-
-                    if(uploadRes.ok) {
-                        const uploadResult = await uploadRes.json();
-                        
-                        await fetch('https://shine-chat-api.shineaung6375.workers.dev/?action=messages', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                username: 'owner',
-                                message: uploadResult.url,
-                                media_url: uploadResult.url,
-                                batch_id: batch_id,
-                                receiver_user: target_user
-                            })
-                        });
+                if (file) {
+                    let response;
+                    if (file.type.startsWith('image/')) {
+                        response = await channel.sendImage(file);
+                        attachments.push({ type: 'image', image_url: response.file });
+                    } else if (file.type.startsWith('video/')) {
+                        response = await channel.sendFile(file);
+                        attachments.push({ type: 'video', asset_url: response.file });
                     }
-                } catch(err) {
-                    console.error(err);
                 }
-            }
 
-            fileInput.value = "";
-            shouldScroll = true;
-            loadChats();
+                await channel.sendMessage({
+                    text: text,
+                    attachments: attachments
+                });
+
+                input.value = "";
+                fileInput.value = "";
+                document.getElementById('file-name-display').classList.add('hidden');
+
+            } catch (error) {
+                alert("စာပို့မရပါ၊ ခဏနားပြီး ပြန်ကြိုးစားပါဗျာ။");
+                console.error(error);
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.innerText = "ပြန်စာ ပို့မည်";
+            }
         }
 
-        setInterval(loadChats, 3000);
-        loadChats();
+        function renderMessage(msg) {
+            const chatBox = document.getElementById('chat-box');
+            const isOwner = msg.user.id === ownerId;
+
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `flex flex-col ${isOwner ? 'items-end' : 'items-start'}`;
+
+            let mediaHTML = '';
+            if (msg.attachments && msg.attachments.length > 0) {
+                msg.attachments.forEach(att => {
+                    if (att.type === 'image' || att.image_url) {
+                        mediaHTML += `<img src="${att.image_url || att.asset_url}" class="max-w-xs rounded-lg my-1 border border-gray-700 shadow">`;
+                    } else if (att.type === 'video' || att.asset_url) {
+                        mediaHTML += `<video controls src="${att.asset_url}" class="max-w-xs rounded-lg my-1 border border-gray-700 shadow"></video>`;
+                    }
+                });
+            }
+
+            msgDiv.innerHTML = `
+                <div class="flex items-center space-x-2 mb-1">
+                    <span class="text-xs ${isOwner ? 'text-blue-400 font-bold' : 'text-green-400 font-bold'}">
+                        ${isOwner ? '👑 ' + msg.user.name : '👤 ' + (msg.user.name || msg.user.id)}
+                    </span>
+                </div>
+                <div class="${isOwner ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-100 border border-gray-700'} p-3 rounded-xl max-w-sm text-sm shadow">
+                    ${mediaHTML}
+                    ${msg.text ? `<div>${msg.text}</div>` : ''}
+                </div>
+            `;
+
+            chatBox.appendChild(msgDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        initAdminChat();
     </script>
 </body>
 </html>
