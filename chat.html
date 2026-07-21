@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Chat - Shine Digital Store</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Pusher JS Library -->
+    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Outfit', sans-serif; background: #020617; }
@@ -52,44 +54,76 @@
 
     <script>
         const chatBox = document.getElementById('chat_scroll_box');
-        // Custom Domain လင့်ခ်အမှန် ချိတ်ဆက်ထားခြင်း
         const API_BASE = 'https://api.shinedigitalstore.com/'; 
-        let shouldScroll = true;
 
-        // Chat မက်ဆေ့ခ်ျများ ဆွဲယူခြင်း
+        // -------------------------------------------------------------
+        // ⚡ PUSHER REAL-TIME SETUP
+        // -------------------------------------------------------------
+        const pusher = new Pusher('10db870f9cf78d100aca', {
+            cluster: 'ap1'
+        });
+
+        // Channel ကို Listen လုပ်ခြင်း
+        const channel = pusher.subscribe('chat-channel');
+
+        // စာအသစ် ရောက်လာရင် Auto မျက်နှာပြင်ပေါ် ထည့်ပေးခြင်း
+        channel.bind('new-message', function(msg) {
+            appendMessage(msg);
+        });
+
+        // စာတို သို့မဟုတ် ပုံကို Screen ပေါ် သို့ ရေးဆွဲပေးသည့် Function
+        function appendMessage(msg) {
+            const is_me = (msg.sender !== 'owner');
+            const bg_color = is_me ? 'bg-blue-600 self-end text-right text-white' : 'bg-slate-900 border border-slate-800 self-start text-left text-slate-200';
+            const align_self = is_me ? 'self-end' : 'self-start';
+
+            let msgElement = document.createElement('div');
+
+            if (msg.media_url) {
+                msgElement.className = `max-w-[250px] p-1 rounded-2xl bg-slate-900/40 border border-slate-800/30 ${align_self}`;
+                msgElement.innerHTML = `
+                    <img src="${msg.media_url}" class="w-full h-auto rounded-xl max-h-[250px] object-contain">
+                    <div class="text-[8px] opacity-40 flex justify-end px-1.5 mt-1"><span>${msg.time || ''}</span></div>
+                `;
+            } else {
+                msgElement.className = `max-w-[85%] p-3.5 rounded-2xl text-xs ${bg_color} ${align_self}`;
+                msgElement.innerHTML = `
+                    <p class="leading-relaxed text-[13px]">${msg.message}</p>
+                    <div class="text-[8px] opacity-40 flex justify-end mt-1.5"><span>${msg.time || ''}</span></div>
+                `;
+            }
+
+            // Empty State ရှိနေပါက ဖျက်ပစ်မည်
+            if (chatBox.querySelector('.empty-chat-placeholder')) {
+                chatBox.innerHTML = '';
+            }
+
+            chatBox.appendChild(msgElement);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // -------------------------------------------------------------
+        // 📥 OLD CHATS LOAD ( စာမျက်နှာ စဖွင့်ချိန် အဟောင်းများ ခေါ်ယူခြင်း )
+        // -------------------------------------------------------------
         function loadChats() {
             fetch(`${API_BASE}?action=get_messages&user=user`)
                 .then(res => res.json())
                 .then(data => {
-                    if (!Array.isArray(data)) return;
-                    let chatHtml = "";
-                    data.forEach(msg => {
-                        const is_me = (msg.sender !== 'owner');
-                        const bg_color = is_me ? 'bg-blue-600 self-end text-right text-white' : 'bg-slate-900 border border-slate-800 self-start text-left text-slate-200';
-                        const align_self = is_me ? 'self-end' : 'self-start';
-
-                        if (msg.media_url) {
-                            chatHtml += `<div class="max-w-[250px] p-1 rounded-2xl bg-slate-900/40 border border-slate-800/30 ${align_self}">
-                                <img src="${msg.media_url}" class="w-full h-auto rounded-xl max-h-[250px] object-contain">
-                                <div class="text-[8px] opacity-40 flex justify-end px-1.5 mt-1"><span>${msg.time || ''}</span></div>
-                            </div>`;
-                        } else {
-                            chatHtml += `<div class="max-w-[85%] p-3.5 rounded-2xl text-xs ${bg_color} ${align_self}">
-                                <p class="leading-relaxed text-[13px]">${msg.message}</p>
-                                <div class="text-[8px] opacity-40 flex justify-end mt-1.5"><span>${msg.time || ''}</span></div>
-                            </div>`;
-                        }
-                    });
-                    
-                    const pendingLoaders = Array.from(chatBox.querySelectorAll('.tg-loading-bubble'));
-                    chatBox.innerHTML = chatHtml || "<div class='my-auto text-center opacity-30'><p class='text-xs'>💬 Chat Active</p></div>";
-                    pendingLoaders.forEach(el => chatBox.appendChild(el));
-
-                    if(shouldScroll) { chatBox.scrollTop = chatBox.scrollHeight; shouldScroll = false; }
+                    chatBox.innerHTML = "";
+                    if (!Array.isArray(data) || data.length === 0) {
+                        chatBox.innerHTML = "<div class='empty-chat-placeholder my-auto text-center opacity-30'><p class='text-xs'>💬 Chat Active</p></div>";
+                        return;
+                    }
+                    data.forEach(msg => appendMessage(msg));
+                })
+                .catch(() => {
+                    chatBox.innerHTML = "<div class='empty-chat-placeholder my-auto text-center opacity-30'><p class='text-xs'>💬 Chat Active</p></div>";
                 });
         }
 
-        // စာတိုပေးပို့ခြင်း
+        // -------------------------------------------------------------
+        // 📤 SEND MESSAGES ( စာတို ပို့ခြင်း )
+        // -------------------------------------------------------------
         async function sendChat(e) {
             e.preventDefault();
             const msgInput = document.getElementById('user_chat_msg');
@@ -102,10 +136,11 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username: 'user', message: txt })
             });
-            shouldScroll = true; loadChats();
         }
 
-        // ပုံတင်ခြင်းနှင့် Progress Bar တက်ခြင်း
+        // -------------------------------------------------------------
+        // 🖼️ UPLOAD IMAGE ( ပုံ တင်ခြင်း )
+        // -------------------------------------------------------------
         function triggerFileSend() {
             const fileInput = document.getElementById('chat_file_input');
             if(fileInput.files.length === 0) return;
@@ -114,10 +149,10 @@
             const uniqueId = 'up_' + Date.now();
             const localImgUrl = URL.createObjectURL(file);
 
-            // ချက်ချင်း မျက်စိရှေ့မှာ Loading ပြမည့် Bubble
+            // Uploading Loader Bubble
             const loaderHtml = `
                 <div id="${uniqueId}" class='tg-loading-bubble max-w-[250px] p-1 rounded-2xl bg-slate-900/40 border border-slate-800/30 self-end relative overflow-hidden'>
-                    <div class='relative rounded-xl overflow-hidden flex items-center justify-center' style='min-h:145px;'>
+                    <div class='relative rounded-xl overflow-hidden flex items-center justify-center' style='min-height:145px;'>
                         <img src='${localImgUrl}' class='w-full h-full object-cover blur-[5px] opacity-50 scale-105'>
                         <div class='absolute inset-0 m-auto flex flex-col items-center justify-center gap-1.5 bg-slate-950/40'>
                             <div class='w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin'></div>
@@ -135,7 +170,8 @@
             xhr.upload.addEventListener('progress', (e) => {
                 if (e.lengthComputable) {
                     const percent = Math.round((e.loaded / e.total) * 100);
-                    document.getElementById(`text_${uniqueId}`).innerText = percent + '%';
+                    const percentTxt = document.getElementById(`text_${uniqueId}`);
+                    if(percentTxt) percentTxt.innerText = percent + '%';
                 }
             });
 
@@ -147,8 +183,8 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ username: 'user', message: resData.url, media_url: resData.url })
                     });
-                    document.getElementById(uniqueId).remove();
-                    shouldScroll = true; loadChats();
+                    const loaderEl = document.getElementById(uniqueId);
+                    if (loaderEl) loaderEl.remove();
                 }
             };
             xhr.open('POST', `${API_BASE}?action=upload`, true);
@@ -156,9 +192,8 @@
             fileInput.value = "";
         }
 
-        // ၂ စက္ကန့်တစ်ခါ စာအသစ် စစ်ဆေးခြင်း
-        setInterval(loadChats, 2000);
+        // စာမျက်နှာ စဖွင့်တာနဲ့ စာအဟောင်းများကို အကန့်အသတ်မရှိ (၁ ကြိမ်) ဆွဲယူမည်
         loadChats();
     </script>
 </body>
-    </html>
+</html>
