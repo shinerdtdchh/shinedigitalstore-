@@ -3,111 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shine Store Chat</title>
+    <title>Shine Store - Admin Support</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 </head>
-<body class="bg-slate-900 h-screen flex justify-center items-center font-sans">
+<body class="bg-slate-900 h-screen flex justify-center items-center font-sans p-2">
 
-    <!-- Container -->
     <div class="w-full max-w-md h-full md:h-[700px] bg-slate-800 md:rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-700">
         
-        <!-- Header (Telegram Style Owners Section) -->
-        <div class="bg-slate-900 border-b border-slate-700/80 p-3">
-            <div class="flex items-center justify-between mb-2 px-1">
-                <span class="text-xs font-bold text-slate-400 tracking-wider uppercase">Active Admins</span>
-                <span class="text-[10px] bg-green-500/20 text-green-400 font-semibold px-2 py-0.5 rounded-full border border-green-500/30">Online</span>
+        <!-- Header -->
+        <div class="bg-slate-900 border-b border-slate-700/80 p-4 flex justify-between items-center">
+            <div>
+                <h2 id="header-title" class="font-bold text-slate-100 text-sm">Shine Support Center</h2>
+                <p id="header-subtitle" class="text-[10px] text-cyan-400">နယ်ပယ်အလိုက် Admin ရွေးချယ်ပါ</p>
             </div>
-
-            <!-- 4 Owner Profiles -->
-            <div class="flex items-center justify-between px-2 pt-1">
-                <!-- Owner 1 -->
-                <div class="flex flex-col items-center cursor-pointer group">
-                    <div class="relative w-12 h-12 rounded-full p-0.5 bg-gradient-to-tr from-cyan-500 to-blue-500">
-                        <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Owner1" class="w-full h-full rounded-full bg-slate-800 p-1">
-                        <span class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-slate-900 rounded-full"></span>
-                    </div>
-                    <span class="text-[10px] text-slate-300 font-medium mt-1">Shine (Main)</span>
-                </div>
-
-                <!-- Owner 2 -->
-                <div class="flex flex-col items-center cursor-pointer group">
-                    <div class="relative w-12 h-12 rounded-full p-0.5 bg-gradient-to-tr from-cyan-500 to-blue-500">
-                        <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Owner2" class="w-full h-full rounded-full bg-slate-800 p-1">
-                        <span class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-slate-900 rounded-full"></span>
-                    </div>
-                    <span class="text-[10px] text-slate-300 font-medium mt-1">Admin Min</span>
-                </div>
-
-                <!-- Owner 3 -->
-                <div class="flex flex-col items-center cursor-pointer group">
-                    <div class="relative w-12 h-12 rounded-full p-0.5 bg-gradient-to-tr from-cyan-500 to-blue-500">
-                        <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Owner3" class="w-full h-full rounded-full bg-slate-800 p-1">
-                        <span class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-slate-900 rounded-full"></span>
-                    </div>
-                    <span class="text-[10px] text-slate-300 font-medium mt-1">Support Htet</span>
-                </div>
-
-                <!-- Owner 4 -->
-                <div class="flex flex-col items-center cursor-pointer group">
-                    <div class="relative w-12 h-12 rounded-full p-0.5 bg-gradient-to-tr from-cyan-500 to-blue-500">
-                        <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Owner4" class="w-full h-full rounded-full bg-slate-800 p-1">
-                        <span class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-slate-900 rounded-full"></span>
-                    </div>
-                    <span class="text-[10px] text-slate-300 font-medium mt-1">Sales Kyaw</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Call Buttons Bar -->
-        <div class="bg-slate-800/90 px-4 py-2 border-b border-slate-700 flex justify-between items-center text-xs text-slate-300">
-            <span>💬 Live Customer Support</span>
-            <div class="flex space-x-3">
-                <button onclick="startCall('audio')" class="hover:text-cyan-400 bg-slate-700 p-2 rounded-full transition" title="Voice Call">
-                    <i class="fa-solid fa-phone"></i>
-                </button>
-                <button onclick="startCall('video')" class="hover:text-cyan-400 bg-slate-700 p-2 rounded-full transition" title="Video Call">
-                    <i class="fa-solid fa-video"></i>
-                </button>
-            </div>
-        </div>
-
-        <!-- Chat Area -->
-        <div id="chat-box" class="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-900"></div>
-
-        <!-- Media Preview Bar -->
-        <div id="file-preview" class="hidden bg-slate-800 px-4 py-2 border-t border-slate-700 flex justify-between items-center text-xs text-cyan-400">
-            <span id="file-name">Selected File</span>
-            <button onclick="cancelFile()" class="text-red-400 hover:text-red-300"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-
-        <!-- Voice Recording Indicator -->
-        <div id="record-status" class="hidden bg-red-500/10 border-t border-red-500/30 px-4 py-2 flex justify-between items-center text-xs text-red-400 animate-pulse">
-            <span>🎙️ Audio အသံသွင်းနေပါသည်...</span>
-            <button onclick="stopRecording()" class="bg-red-500 text-white px-3 py-1 rounded-full font-bold text-[10px]">Send Voice</button>
-        </div>
-
-        <!-- Input Area (Telegram Design) -->
-        <div class="bg-slate-800 p-3 border-t border-slate-700 flex items-center space-x-2">
-            <!-- File Attach -->
-            <label class="cursor-pointer text-slate-400 hover:text-cyan-400 p-2 transition">
-                <i class="fa-solid fa-paperclip text-lg"></i>
-                <input type="file" id="file-input" class="hidden" accept="image/*,video/*" onchange="handleFileSelect(event)">
-            </label>
-
-            <!-- Text Input -->
-            <input type="text" id="message-input" onkeypress="if(event.key==='Enter') sendMessage()" placeholder="Write a message..." class="flex-1 bg-slate-900 text-slate-100 border border-slate-700 rounded-full px-4 py-2.5 text-sm focus:outline-none focus:border-cyan-500 transition placeholder-slate-500">
-
-            <!-- Audio Record Button -->
-            <button id="mic-btn" onclick="toggleRecording()" class="text-slate-400 hover:text-red-400 p-2 transition" title="Hold/Click to Record">
-                <i class="fa-solid fa-microphone text-lg"></i>
+            <button onclick="showAdminSelection()" id="switch-admin-btn" class="hidden text-xs bg-slate-800 border border-slate-600 text-slate-300 px-3 py-1 rounded-full hover:bg-slate-700">
+                🔄 Admin ပြောင်းရန်
             </button>
+        </div>
 
-            <!-- Send Button -->
-            <button onclick="sendMessage()" class="bg-cyan-500 hover:bg-cyan-400 text-slate-900 w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition active:scale-95 font-bold">
-                <i class="fa-solid fa-paper-plane text-sm"></i>
+        <!-- 1. ADMIN SELECTION SCREEN (နယ်ပယ် ၄ ခု ရွေးရန် စာမျက်နှာ) -->
+        <div id="admin-select-screen" class="flex-1 p-4 space-y-3 overflow-y-auto bg-slate-900">
+            <p class="text-xs text-slate-400 font-semibold mb-2 text-center">ဆက်သွယ်လိုသော နယ်ပယ်ကို ရွေးချယ်ပါ -</p>
+
+            <!-- Admin 1: Account Sales -->
+            <div onclick="selectAdmin('acc_sales', '🛒 အကောင့် ဝယ်/ရောင်း Admin', 'Shine (Acc Sales)')" class="bg-slate-800 border border-slate-700 hover:border-cyan-500 p-3.5 rounded-2xl cursor-pointer transition flex items-center space-x-3 group">
+                <div class="w-12 h-12 rounded-full bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-xl text-cyan-400 group-hover:bg-cyan-500 group-hover:text-slate-900 transition">
+                    🎮
+                </div>
+                <div>
+                    <h3 class="font-bold text-sm text-slate-100">အကောင့် ဝယ်/ရောင်း Admin</h3>
+                    <p class="text-[11px] text-slate-400">Game / Premium App Accounts ဝယ်ယူရန်</p>
+                </div>
+            </div>
+
+            <!-- Admin 2: Course / Training -->
+            <div onclick="selectAdmin('course_admin', '🎓 သင်တန်းအပ်နှံရန် Admin', 'Min (Course Admin)')" class="bg-slate-800 border border-slate-700 hover:border-emerald-500 p-3.5 rounded-2xl cursor-pointer transition flex items-center space-x-3 group">
+                <div class="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-xl text-emerald-400 group-hover:bg-emerald-500 group-hover:text-slate-900 transition">
+                    📚
+                </div>
+                <div>
+                    <h3 class="font-bold text-sm text-slate-100">သင်တန်းအပ်နှံရန် Admin</h3>
+                    <p class="text-[11px] text-slate-400">Class & Course များ စုံစမ်း/အပ်နှံရန်</p>
+                </div>
+            </div>
+
+            <!-- Admin 3: Tech Support -->
+            <div onclick="selectAdmin('tech_support', '🛠️ နည်းပညာ ကူညီရေး Admin', 'Htet (Tech Support)')" class="bg-slate-800 border border-slate-700 hover:border-amber-500 p-3.5 rounded-2xl cursor-pointer transition flex items-center space-x-3 group">
+                <div class="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-xl text-amber-400 group-hover:bg-amber-500 group-hover:text-slate-900 transition">
+                    🔧
+                </div>
+                <div>
+                    <h3 class="font-bold text-sm text-slate-100">နည်းပညာ ကူညီရေး Admin</h3>
+                    <p class="text-[11px] text-slate-400">Error များနှင့် Software ပြဿနာများအတွက်</p>
+                </div>
+            </div>
+
+            <!-- Admin 4: General Help -->
+            <div onclick="selectAdmin('general_help', '💬 အထွေထွေ မေးမြန်းရန် Admin', 'Kyaw (General)')" class="bg-slate-800 border border-slate-700 hover:border-purple-500 p-3.5 rounded-2xl cursor-pointer transition flex items-center space-x-3 group">
+                <div class="w-12 h-12 rounded-full bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-xl text-purple-400 group-hover:bg-purple-500 group-hover:text-slate-900 transition">
+                    💬
+                </div>
+                <div>
+                    <h3 class="font-bold text-sm text-slate-100">အထွေထွေ စုံစမ်းရန် Admin</h3>
+                    <p class="text-[11px] text-slate-400">အခြား အထွေထွေ မေးမြန်းချက်များအတွက်</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. CHAT BOX SCREEN (ရွေးထားသော Admin နှင့် စကားပြောရန်) -->
+        <div id="chat-box" class="hidden flex-1 overflow-y-auto p-4 space-y-3 bg-slate-900"></div>
+
+        <!-- Input Area -->
+        <div id="input-container" class="hidden bg-slate-800 p-3 border-t border-slate-700 flex items-center space-x-2">
+            <input type="text" id="message-input" onkeypress="if(event.key==='Enter') sendMessage()" placeholder="စာရိုက်ပါ..." class="flex-1 bg-slate-900 text-slate-100 border border-slate-700 rounded-full px-4 py-2 text-sm focus:outline-none focus:border-cyan-500">
+            <button onclick="sendMessage()" class="bg-cyan-500 hover:bg-cyan-400 text-slate-900 w-9 h-9 rounded-full flex items-center justify-center font-bold">
+                <i class="fa-solid fa-paper-plane text-xs"></i>
             </button>
         </div>
     </div>
@@ -120,136 +93,85 @@
         let userId = localStorage.getItem("shine_chat_user_id") || "User_" + Math.floor(1000 + Math.random() * 9000);
         localStorage.setItem("shine_chat_user_id", userId);
 
-        let selectedFileBase64 = null;
-        let selectedFileType = null;
-        let mediaRecorder, audioChunks = [];
+        let selectedAdminCategory = null;
+        let activeMessageListener = null;
 
-        // File Select (Photos / Videos)
-        function handleFileSelect(e) {
-            const file = e.target.files[0];
-            if (!file) return;
+        function selectAdmin(categoryKey, categoryName, adminName) {
+            selectedAdminCategory = categoryKey;
 
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                selectedFileBase64 = event.target.result;
-                selectedFileType = file.type.startsWith('image/') ? 'image' : 'video';
-                document.getElementById('file-name').innerText = (selectedFileType === 'image' ? '📷 Photo: ' : '🎥 Video: ') + file.name;
-                document.getElementById('file-preview').classList.remove('hidden');
-            };
-            reader.readAsDataURL(file);
+            // UI Changes
+            document.getElementById('admin-select-screen').classList.add('hidden');
+            document.getElementById('chat-box').classList.remove('hidden');
+            document.getElementById('input-container').classList.remove('hidden');
+            document.getElementById('switch-admin-btn').classList.remove('hidden');
+
+            document.getElementById('header-title').innerText = categoryName;
+            document.getElementById('header-subtitle').innerText = "တာဝန်ခံ: " + adminName;
+
+            loadMessages();
         }
 
-        function cancelFile() {
-            selectedFileBase64 = null;
-            selectedFileType = null;
-            document.getElementById('file-input').value = "";
-            document.getElementById('file-preview').classList.add('hidden');
+        function showAdminSelection() {
+            document.getElementById('admin-select-screen').classList.remove('hidden');
+            document.getElementById('chat-box').classList.add('hidden');
+            document.getElementById('input-container').classList.add('hidden');
+            document.getElementById('switch-admin-btn').classList.add('hidden');
+
+            document.getElementById('header-title').innerText = "Shine Support Center";
+            document.getElementById('header-subtitle').innerText = "နယ်ပယ်အလိုက် Admin ရွေးချယ်ပါ";
         }
 
-        // Voice Recording System
-        async function toggleRecording() {
-            if (!mediaRecorder || mediaRecorder.state === "inactive") {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorder = new MediaRecorder(stream);
-                audioChunks = [];
-                mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-                mediaRecorder.start();
-                document.getElementById('record-status').classList.remove('hidden');
-            } else {
-                stopRecording();
+        function loadMessages() {
+            const chatBox = document.getElementById('chat-box');
+            chatBox.innerHTML = '';
+
+            if (activeMessageListener) {
+                database.ref("category_rooms/" + selectedAdminCategory + "/" + userId).off();
             }
+
+            activeMessageListener = database.ref("category_rooms/" + selectedAdminCategory + "/" + userId).on("child_added", (snapshot) => {
+                const msg = snapshot.val();
+                const isMe = msg.role === 'customer';
+                const timeStr = new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                const msgDiv = document.createElement('div');
+                msgDiv.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} mb-1`;
+                msgDiv.innerHTML = `
+                    <span class="text-[10px] text-slate-400 px-1 mb-0.5">${isMe ? 'You' : '👑 ' + msg.sender}</span>
+                    <div class="max-w-[80%] px-3.5 py-2 rounded-2xl text-sm shadow ${isMe ? 'bg-cyan-600 text-white rounded-br-none' : 'bg-slate-800 text-slate-100 rounded-bl-none border border-slate-700'}">
+                        ${msg.text}
+                    </div>
+                    <span class="text-[9px] text-slate-500 px-1 mt-0.5">${timeStr}</span>
+                `;
+                chatBox.appendChild(msgDiv);
+                chatBox.scrollTop = chatBox.scrollHeight;
+            });
         }
 
-        function stopRecording() {
-            if (mediaRecorder && mediaRecorder.state === "recording") {
-                mediaRecorder.stop();
-                mediaRecorder.onstop = () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                        database.ref("messages").push({
-                            sender: userId,
-                            audio: reader.result,
-                            type: 'audio',
-                            role: "customer",
-                            timestamp: Date.now()
-                        });
-                    };
-                    reader.readAsDataURL(audioBlob);
-                    document.getElementById('record-status').classList.add('hidden');
-                };
-            }
-        }
-
-        // Call Feature Simulation
-        function startCall(type) {
-            alert((type === 'video' ? '🎥 Video' : '📞 Voice') + " Call ခေါ်ဆိုနေပါသည်။ Owner ဘက်မှ လက်ခံပါက စတင်ပြောဆိုနိုင်ပါမည်။");
-        }
-
-        // Send Message
         function sendMessage() {
             const input = document.getElementById('message-input');
             const text = input.value.trim();
+            if (!text || !selectedAdminCategory) return;
 
-            if (!text && !selectedFileBase64) return;
+            const timeNow = Date.now();
 
-            const msgData = {
+            // 1. Send to Category Chat Room
+            database.ref("category_rooms/" + selectedAdminCategory + "/" + userId).push({
                 sender: userId,
+                text: text,
                 role: "customer",
-                timestamp: Date.now()
-            };
+                timestamp: timeNow
+            });
 
-            if (text) msgData.text = text;
-            if (selectedFileBase64) {
-                msgData.file = selectedFileBase64;
-                msgData.type = selectedFileType;
-            }
-
-            database.ref("messages").push(msgData);
+            // 2. Notify Category Admin List
+            database.ref("category_inbox/" + selectedAdminCategory + "/" + userId).set({
+                userId: userId,
+                lastMessage: text,
+                lastTime: timeNow
+            });
 
             input.value = "";
-            cancelFile();
         }
-
-        // Realtime Messages Render
-        database.ref("messages").on("child_added", (snapshot) => {
-            const msg = snapshot.val();
-            const chatBox = document.getElementById('chat-box');
-            const isMe = msg.sender === userId;
-            const isOwner = msg.role === 'owner';
-
-            const timeStr = new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-            const msgDiv = document.createElement('div');
-            msgDiv.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} mb-1`;
-
-            let mediaHTML = '';
-            if (msg.type === 'image') {
-                mediaHTML = `<img src="${msg.file}" class="max-w-[200px] rounded-lg mb-1 border border-slate-700 shadow">`;
-            } else if (msg.type === 'video') {
-                mediaHTML = `<video controls src="${msg.file}" class="max-w-[200px] rounded-lg mb-1 border border-slate-700 shadow"></video>`;
-            } else if (msg.type === 'audio') {
-                mediaHTML = `<audio controls src="${msg.audio}" class="max-w-[220px] mb-1"></audio>`;
-            }
-
-            msgDiv.innerHTML = `
-                <span class="text-[10px] text-slate-400 px-1 mb-0.5">
-                    ${isOwner ? '👑 ' + msg.sender : (isMe ? 'You' : msg.sender)}
-                </span>
-                <div class="max-w-[80%] px-3.5 py-2 rounded-2xl text-sm shadow-md ${
-                    isMe 
-                    ? 'bg-cyan-600 text-white rounded-br-none' 
-                    : (isOwner ? 'bg-indigo-600 text-white rounded-bl-none font-medium' : 'bg-slate-800 text-slate-100 border border-slate-700 rounded-bl-none')
-                }">
-                    ${mediaHTML}
-                    ${msg.text ? `<div>${msg.text}</div>` : ''}
-                </div>
-                <span class="text-[9px] text-slate-500 px-1 mt-0.5">${timeStr}</span>
-            `;
-
-            chatBox.appendChild(msgDiv);
-            chatBox.scrollTop = chatBox.scrollHeight;
-        });
     </script>
 </body>
 </html>
