@@ -109,9 +109,11 @@
         </div>
     </div>
 
+    <!-- Header Bar -->
     <header class="fixed top-0 left-0 right-0 z-[1000] bg-[#050a15]/90 backdrop-blur-xl border-b border-white/5">
         <div class="max-w-md mx-auto p-3 flex justify-between items-center relative">
             
+            <!-- Logo Section -->
             <div class="flex items-center gap-1.5 flex-shrink-0"> 
                 <div class="logo-glow-container">
                     <div class="w-7 h-7 rounded-full overflow-hidden bg-slate-900 flex items-center justify-center border border-[#050a15]">
@@ -129,40 +131,52 @@
                 </div>
             </div>
 
+            <!-- Dynamic Auth Bar (အကောင့် ဝင်/မဝင် ပေါ်မူတည်၍ ပြောင်းလဲမည်) -->
             <div id="auth-section" class="flex flex-col items-end gap-1 relative flex-shrink-0">
-                <div class="bg-blue-600/10 px-2 py-0.5 rounded-full border border-blue-500/20 flex items-center gap-1.5 select-none">
-                    <div class="flex items-center gap-1 cursor-pointer" onclick="toggleDropdown(event)">
-                        <span class="text-[10px] font-bold text-blue-400" id="balance-text">0 MMK</span>
-                        <i class="fas fa-caret-down text-[8px] text-blue-400/70 transition-transform" id="dropdown-arrow"></i>
+                
+                <!-- 1. Logged In View (အကောင့်ဝင်ထားပါက ပြမည့် ဘား) -->
+                <div id="user-balance-bar" class="hidden flex-col items-end gap-1">
+                    <div class="bg-blue-600/10 px-2 py-0.5 rounded-full border border-blue-500/20 flex items-center gap-1.5 select-none">
+                        <div class="flex items-center gap-1 cursor-pointer" onclick="toggleDropdown(event)">
+                            <span class="text-[10px] font-bold text-blue-400" id="balance-text">0 MMK</span>
+                            <i class="fas fa-caret-down text-[8px] text-blue-400/70 transition-transform" id="dropdown-arrow"></i>
+                        </div>
+                        <a href="topup.html" class="w-3.5 h-3.5 bg-blue-600 rounded-full flex items-center justify-center shadow-md shadow-blue-500/20 active:scale-90 transition-transform">
+                            <i class="fas fa-plus text-[6px] text-white"></i>
+                        </a>
                     </div>
-                    
-                    <a href="topup.html" class="w-3.5 h-3.5 bg-blue-600 rounded-full flex items-center justify-center shadow-md shadow-blue-500/20 active:scale-90 transition-transform">
-                        <i class="fas fa-plus text-[6px] text-white"></i>
-                    </a>
+
+                    <div id="currencyMenu" class="currency-dropdown absolute top-7 right-6 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-xl p-1 shadow-2xl z-[1001] min-w-[110px]">
+                        <button onclick="selectCurrency('MMK')" class="w-full text-left text-[10px] font-bold px-2.5 py-1.5 rounded-lg text-slate-300 hover:bg-blue-600 hover:text-white transition-colors">🇲🇲 MMK (မြန်မာ)</button>
+                        <button onclick="selectCurrency('USDT')" class="w-full text-left text-[10px] font-bold px-2.5 py-1.5 rounded-lg text-slate-300 hover:bg-blue-600 hover:text-white transition-colors">🇺🇸 USDT (ဒေါ်လာ)</button>
+                        <button onclick="selectCurrency('THB')" class="w-full text-left text-[10px] font-bold px-2.5 py-1.5 rounded-lg text-slate-300 hover:bg-blue-600 hover:text-white transition-colors">🇹🇭 THB (ဘတ်)</button>
+                        <button onclick="selectCurrency('SGD')" class="w-full text-left text-[10px] font-bold px-2.5 py-1.5 rounded-lg text-slate-300 hover:bg-blue-600 hover:text-white transition-colors">🇸🇬 SGD (စင်ကာပူ)</button>
+                        <button onclick="selectCurrency('MYR')" class="w-full text-left text-[10px] font-bold px-2.5 py-1.5 rounded-lg text-slate-300 hover:bg-blue-600 hover:text-white transition-colors">🇲🇾 MYR (မလေး)</button>
+                        <button onclick="selectCurrency('KRW')" class="w-full text-left text-[10px] font-bold px-2.5 py-1.5 rounded-lg text-slate-300 hover:bg-blue-600 hover:text-white transition-colors">🇰🇷 KRW (ကိုရီးယား)</button>
+                        <button onclick="selectCurrency('JPY')" class="w-full text-left text-[10px] font-bold px-2.5 py-1.5 rounded-lg text-slate-300 hover:bg-blue-600 hover:text-white transition-colors">🇯🇵 JPY (ဂျပန်)</button>
+                        <button onclick="selectCurrency('VND')" class="w-full text-left text-[10px] font-bold px-2.5 py-1.5 rounded-lg text-slate-300 hover:bg-blue-600 hover:text-white transition-colors">🇻🇳 VND (ဗီယက်နမ်)</button>
+                        <button onclick="selectCurrency('INR')" class="w-full text-left text-[10px] font-bold px-2.5 py-1.5 rounded-lg text-slate-300 hover:bg-blue-600 hover:text-white transition-colors">🇮🇳 INR (အိန္ဒိယ)</button>
+                    </div>
+
+                    <div class="bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20 flex items-center gap-1 shadow-lg shadow-amber-500/5">
+                        <i class="fas fa-coins text-[8px] text-amber-400"></i>
+                        <span class="text-[9px] font-bold text-amber-400" id="coins-text">0 C</span>
+                    </div>
                 </div>
 
-                <div id="currencyMenu" class="currency-dropdown absolute top-7 right-6 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-xl p-1 shadow-2xl z-[1001] min-w-[110px]">
-                    <button onclick="selectCurrency('MMK')" class="w-full text-left text-[10px] font-bold px-2.5 py-1.5 rounded-lg text-slate-300 hover:bg-blue-600 hover:text-white transition-colors">🇲🇲 MMK (မြန်မာ)</button>
-                    <button onclick="selectCurrency('USDT')" class="w-full text-left text-[10px] font-bold px-2.5 py-1.5 rounded-lg text-slate-300 hover:bg-blue-600 hover:text-white transition-colors">🇺🇸 USDT (ဒေါ်လာ)</button>
-                    <button onclick="selectCurrency('THB')" class="w-full text-left text-[10px] font-bold px-2.5 py-1.5 rounded-lg text-slate-300 hover:bg-blue-600 hover:text-white transition-colors">🇹🇭 THB (ဘတ်)</button>
-                    <button onclick="selectCurrency('SGD')" class="w-full text-left text-[10px] font-bold px-2.5 py-1.5 rounded-lg text-slate-300 hover:bg-blue-600 hover:text-white transition-colors">🇸🇬 SGD (စင်ကာပူ)</button>
-                    <button onclick="selectCurrency('MYR')" class="w-full text-left text-[10px] font-bold px-2.5 py-1.5 rounded-lg text-slate-300 hover:bg-blue-600 hover:text-white transition-colors">🇲🇾 MYR (မလေး)</button>
-                    <button onclick="selectCurrency('KRW')" class="w-full text-left text-[10px] font-bold px-2.5 py-1.5 rounded-lg text-slate-300 hover:bg-blue-600 hover:text-white transition-colors">🇰🇷 KRW (ကိုရီးယား)</button>
-                    <button onclick="selectCurrency('JPY')" class="w-full text-left text-[10px] font-bold px-2.5 py-1.5 rounded-lg text-slate-300 hover:bg-blue-600 hover:text-white transition-colors">🇯🇵 JPY (ဂျပန်)</button>
-                    <button onclick="selectCurrency('VND')" class="w-full text-left text-[10px] font-bold px-2.5 py-1.5 rounded-lg text-slate-300 hover:bg-blue-600 hover:text-white transition-colors">🇻🇳 VND (ဗီယက်နမ်)</button>
-                    <button onclick="selectCurrency('INR')" class="w-full text-left text-[10px] font-bold px-2.5 py-1.5 rounded-lg text-slate-300 hover:bg-blue-600 hover:text-white transition-colors">🇮🇳 INR (အိန္ဒိယ)</button>
-                </div>
+                <!-- 2. Logged Out View (အကောင့်မဝင်ရသေးပါက ပြမည့် Login ခလုတ်) -->
+                <a id="login-btn-header" href="profile.html" class="bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-bold text-[10px] px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg shadow-blue-500/20 active:scale-95 transition-all">
+                    <i class="fas fa-right-to-bracket text-[10px]"></i>
+                    <span>အကောင့်ဝင်ရန်</span>
+                </a>
 
-                <div class="bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20 flex items-center gap-1 shadow-lg shadow-amber-500/5">
-                    <i class="fas fa-coins text-[8px] text-amber-400"></i>
-                    <span class="text-[9px] font-bold text-amber-400" id="coins-text">0 C</span>
-                </div>
             </div>
         </div>
     </header>
 
     <div id="scroll-content" class="pt-16 pb-36">
 
+        <!-- Search Input -->
         <div class="max-w-md mx-auto px-4 mt-2">
             <form action="search.html" method="GET" class="relative group">
                 <input type="text" name="q" placeholder="Search services..." 
@@ -173,6 +187,7 @@
             </form>
         </div>
 
+        <!-- Banner Slider -->
         <div class="max-w-md mx-auto px-4 mt-4">
             <div class="swiper bannerSwiper rounded-[1.2rem] overflow-hidden border border-white/5">
                 <div class="swiper-wrapper">
@@ -184,6 +199,7 @@
             </div>
         </div>
 
+        <!-- Popular Services Section -->
         <div class="max-w-md mx-auto px-4 mt-6">
             <div class="flex items-center gap-2 mb-4">
                 <i class="fas fa-fire fire-icon text-md"></i>
@@ -307,11 +323,13 @@
         </div>
     </div>
 
+    <!-- Contact Floating Button -->
     <a href="contact.html" 
        class="fixed bottom-28 right-5 w-11 h-11 bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/40 z-[999] animate-pulse hover:scale-110 active:scale-95 transition-all border border-white/10 p-2.5">
         <i class="fas fa-user-astronaut text-lg text-white drop-shadow-[0_0_6px_rgba(255,255,255,0.8)]"></i>
     </a>
 
+    <!-- Bottom Navigation Bar -->
     <div class="fixed bottom-5 left-0 right-0 z-[1000] flex justify-center items-center pointer-events-none">
         <nav class="w-[92%] max-w-sm glass rounded-[2.5rem] p-1.5 px-3 flex justify-between items-center shadow-2xl pointer-events-auto">
             <a href="index.html" class="flex flex-col items-center gap-0.5 py-1 group w-14">
@@ -338,6 +356,7 @@
         </nav>
     </div>
 
+    <!-- Swiper JS & Logic Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script>
         var swiper = new Swiper(".bannerSwiper", {
@@ -350,6 +369,23 @@
         let mmkPerUsd = 4500; 
         let balanceMMK = 0; 
         let totalCoins = 0;
+
+        // Check Login Session for Header UI Toggle
+        function checkAuthHeader() {
+            const userId = localStorage.getItem("shine_chat_user_id");
+            const userBalanceBar = document.getElementById("user-balance-bar");
+            const loginBtnHeader = document.getElementById("login-btn-header");
+
+            if (userId) {
+                userBalanceBar.classList.remove("hidden");
+                userBalanceBar.classList.add("flex");
+                loginBtnHeader.classList.add("hidden");
+            } else {
+                userBalanceBar.classList.add("hidden");
+                userBalanceBar.classList.remove("flex");
+                loginBtnHeader.classList.remove("hidden");
+            }
+        }
 
         async function fetchLiveRates() {
             const symbols = ['USDTUSDC', 'USDTTHB', 'USDTSGD', 'USDTMYR', 'USDTKRW', 'USDTJPY', 'USDTVND', 'USDTINR'];
@@ -408,6 +444,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            checkAuthHeader();
             document.getElementById('coins-text').innerText = formatNumberShort(totalCoins) + ' C';
             fetchLiveRates();
         });
@@ -417,6 +454,7 @@
             document.getElementById('dropdown-arrow').style.transform = 'rotate(0deg)';
         });
 
+        // Pull-to-refresh Logic
         let startY = 0; let currentY = 0; let isPulling = false;
         const ptrLoading = document.getElementById('ptr-loading');
         const scrollContent = document.getElementById('scroll-content');
@@ -454,4 +492,4 @@
         });
     </script>
 </body>
-</html>
+    </html>
