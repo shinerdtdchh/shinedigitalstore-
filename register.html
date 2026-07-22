@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Shine Digital</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Outfit', sans-serif; background: #020617; }
+        .cyber-card { background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(59, 130, 246, 0.15); box-shadow: 0 0 40px rgba(59, 130, 246, 0.05); }
+        .otp-box:focus { border-color: #3b82f6; box-shadow: 0 0 15px rgba(59, 130, 246, 0.4); }
+        
+        .picker-container { height: 180px; overflow-y: scroll; scroll-snap-type: y mandatory; scrollbar-width: none; }
+        .picker-container::-webkit-scrollbar { display: none; }
+        .picker-item { height: 45px; display: flex; align-items: center; justify-content: center; scroll-snap-align: center; font-size: 1.25rem; font-weight: 700; color: #64748b; transition: all 0.2s; }
+        .picker-item.selected { color: #3b82f6; font-size: 1.5rem; }
+        .picker-mask { background: linear-gradient(to bottom, rgba(15,23,42,0.95) 0%, rgba(15,23,42,0) 25%, rgba(15,23,42,0) 75%, rgba(15,23,42,0.95) 100%); pointer-events: none; }
+    </style>
+</head>
+<body class="text-white flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-sm cyber-card p-8 rounded-[2.5rem] relative">
+        
+        <!-- Back Button (Step 2 & 3 အတွက်) -->
+        <button id="back_btn" onclick="goToStep(1)" class="hidden absolute top-8 left-7 text-slate-400 hover:text-white bg-slate-900 border border-slate-800 p-2.5 rounded-full transition active:scale-90 flex items-center justify-center cursor-pointer">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+            </svg>
+        </button>
+
+        <h2 class="text-2xl font-black text-center text-blue-500 mb-8 uppercase tracking-widest italic">Register</h2>
+        
+        <!-- Alert Box -->
+        <div id="alert_box" class="hidden p-4 rounded-2xl mb-5 text-center">
+            <p id="alert_text" class="text-xs font-bold"></p>
+        </div>
+
+        <!-- STEP 1: Email Input -->
+        <div id="step_1" class="space-y-4">
+            <div>
+                <label class="text-[10px] text-slate-500 font-bold ml-2 uppercase tracking-wider">Email Address</label>
+                <input type="email" id="uemail" placeholder="example@gmail.com" class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 mt-1 text-sm outline-none focus:border-blue-500/80 transition-all font-medium" required>
+            </div>
+            <button onclick="sendOtp()" id="send_otp_btn" class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-blue-950/50 transition-all active:scale-[0.98] mt-4 cursor-pointer">
+                SEND OTP CODE
+            </button>
+        </div>
+
+        <!-- STEP 2: OTP Verification -->
+        <div id="step_2" class="space-y-6 hidden">
+            <div class="text-center">
+                <p class="text-[10px] text-blue-400 font-black mb-4 uppercase tracking-widest">Enter Verification OTP</p>
+                <div class="flex justify-center gap-2" id="otp-container">
+                    <input type="number" class="otp-box w-12 h-14 bg-slate-950 border border-slate-800 text-center text-2xl font-black rounded-xl outline-none transition-all" pattern="[0-9]*" inputmode="numeric">
+                    <input type="number" class="otp-box w-12 h-14 bg-slate-950 border border-slate-800 text-center text-2xl font-black rounded-xl outline-none transition-all" pattern="[0-9]*" inputmode="numeric">
+                    <input type="number" class="otp-box w-12 h-14 bg-slate-950 border border-slate-800 text-center text-2xl font-black rounded-xl outline-none transition-all" pattern="[0-9]*" inputmode="numeric">
+                    <input type="number" class="otp-box w-12 h-14 bg-slate-950 border border-slate-800 text-center text-2xl font-black rounded-xl outline-none transition-all" pattern="[0-9]*" inputmode="numeric">
+                    <input type="number" class="otp-box w-12 h-14 bg-slate-950 border border-slate-800 text-center text-2xl font-black rounded-xl outline-none transition-all" pattern="[0-9]*" inputmode="numeric">
+                    <input type="number" class="otp-box w-12 h-14 bg-slate-950 border border-slate-800 text-center text-2xl font-black rounded-xl outline-none transition-all" pattern="[0-9]*" inputmode="numeric">
+                </div>
+                
+                <button onclick="verifyOtp()" id="next_step_btn" class="w-full bg-blue-600 hover:bg-blue-500 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest text-white shadow-lg transition-all active:scale-[0.98] mt-6 cursor-pointer">
+                    NEXT STEP ➡️
+                </button>
+
+                <div class="mt-5 pt-3 border-t border-slate-900">
+                    <button onclick="resendOtp()" id="resendBtn" class="text-[11px] text-blue-500 font-bold hover:underline uppercase tracking-wider cursor-pointer">
+                        🔄 Code ပြန်ပို့ရန် (Resend OTP)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 3: Final Details -->
+        <div id="step_3" class="space-y-4 hidden">
+            <div>
+                <label class="text-[10px] text-slate-500 font-bold ml-2 uppercase tracking-wider">Full Name</label>
+                <input type="text" id="full_name" placeholder="သင့်အမည်" class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 mt-1 text-sm outline-none focus:border-blue-500/80 transition-all font-medium" required>
+            </div>
+            <div>
+                <label class="text-[10px] text-slate-500 font-bold ml-2 uppercase tracking-wider">Username</label>
+                <div class="relative mt-1">
+                    <span class="absolute left-4 top-4 text-blue-500 font-black text-sm select-none">@</span>
+                    <input type="text" id="uname_input" placeholder="username" class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 pl-8 text-sm outline-none focus:border-blue-500/80 transition-all font-medium" required>
+                </div>
+            </div>
+            
+            <div>
+                <label class="text-[10px] text-slate-500 font-bold ml-2 uppercase tracking-wider">Birthday</label>
+                <input type="text" id="dob_trigger" readonly placeholder="Select Birthday" onclick="openPicker()" class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 mt-1 text-sm outline-none focus:border-blue-500 cursor-pointer text-blue-400 font-bold">
+                <input type="hidden" id="final_dob">
+            </div>
+
+            <div>
+                <label class="text-[10px] text-slate-500 font-bold ml-2 uppercase tracking-wider">Password</label>
+                <div class="relative mt-1">
+                    <input type="password" id="password_input" placeholder="••••••••" class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 pr-12 text-sm outline-none focus:border-blue-500/80 transition-all" required>
+                    <button type="button" onclick="togglePasswordVisibility('password_input', this)" class="absolute right-4 top-4 text-slate-500 hover:text-slate-300 transition-colors cursor-pointer">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.644r26.27A11.952 11.952 0 0012 20.3c3.41 0 6.51-1.422 8.77-3.707m0 0A11.95 11.95 0 0112 2.944a11.944 11.944 0 01-8.77 3.707M19.5 12a7.5 7.5 0 11-15 0 7.5 7.5 0 0115 0z" /></svg>
+                    </button>
+                </div>
+            </div>
+
+            <div>
+                <label class="text-[10px] text-slate-500 font-bold ml-2 uppercase tracking-wider">Confirm Password</label>
+                <div class="relative mt-1">
+                    <input type="password" id="cpassword_input" placeholder="••••••••" class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 pr-12 text-sm outline-none focus:border-blue-500/80 transition-all" required>
+                    <button type="button" onclick="togglePasswordVisibility('cpassword_input', this)" class="absolute right-4 top-4 text-slate-500 hover:text-slate-300 transition-colors cursor-pointer">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.644r26.27A11.952 11.952 0 0012 20.3c3.41 0 6.51-1.422 8.77-3.707m0 0A11.95 11.95 0 0112 2.944a11.944 11.944 0 01-8.77 3.707M19.5 12a7.5 7.5 0 11-15 0 7.5 7.5 0 0115 0z" /></svg>
+                    </button>
+                </div>
+                <p id="password_match_text" class="text-[11px] font-bold mt-1.5 ml-2 transition-all"></p>
+            </div>
+
+            <button onclick="finalRegister()" id="final_submit_btn" class="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white shadow-lg transition-all active:scale-[0.98] mt-6 cursor-pointer">
+                CREATE ACCOUNT & JOIN
+            </button>
+        </div>
+
+        <!-- iOS WHEEL PICKER MODAL -->
+        <div id="pickerDrawer" class="fixed inset-0 bg-black/60 z-50 hidden flex items-end transition-opacity duration-300 opacity-0">
+            <div class="w-full bg-slate-900 rounded-t-[2rem] p-6 space-y-4 transform translate-y-full transition-transform duration-300 max-w-sm mx-auto">
+                <div class="flex justify-between items-center pb-2 border-b border-slate-800">
+                    <button type="button" onclick="closePicker()" class="text-xs text-slate-400 font-bold uppercase tracking-wider cursor-pointer">Cancel</button>
+                    <span class="text-xs font-black text-slate-400 uppercase tracking-widest">Select Date</span>
+                    <button type="button" onclick="confirmPicker()" class="text-xs text-blue-500 font-black uppercase tracking-wider cursor-pointer">Done</button>
+                </div>
+                
+                <div class="relative flex justify-center items-center bg-slate-950 rounded-2xl p-2 border border-slate-800">
+                    <div class="absolute inset-x-0 h-11 border-y border-blue-500/20 top-[68px] bg-blue-500/5"></div>
+                    
+                    <div class="picker-container w-1/3 text-center" id="monthWheel" onscroll="handleWheelScroll('monthWheel')">
+                        <div class="h-[68px]"></div>
+                        <div class='picker-item' data-val='01'>January</div>
+                        <div class='picker-item' data-val='02'>February</div>
+                        <div class='picker-item' data-val='03'>March</div>
+                        <div class='picker-item' data-val='04'>April</div>
+                        <div class='picker-item' data-val='05'>May</div>
+                        <div class='picker-item' data-val='06'>June</div>
+                        <div class='picker-item' data-val='07'>July</div>
+                        <div class='picker-item' data-val='08'>August</div>
+                        <div class='picker-item' data-val='09'>September</div>
+                        <div class='picker-item' data-val='10'>October</div>
+                        <div class='picker-item' data-val='11'>November</div>
+                        <div class='picker-item' data-val='12'>December</div>
+                        <div class="h-[68px]"></div>
+                    </div>
+                    <div class="picker-container w-1/3 text-center" id="dayWheel" onscroll="handleWheelScroll('dayWheel')">
+                        <div class="h-[68px]"></div>
+                        <script>
+                            for(let d=1; d<=31; d++) {
+                                let val = String(d).padStart(2, '0');
+                                document.write(`<div class='picker-item' data-val='${val}'>${val}</div>`);
+                            }
+                        </script>
+                        <div class="h-[68px]"></div>
+                    </div>
+                    <div class="picker-container w-1/3 text-center" id="yearWheel" onscroll="handleWheelScroll('yearWheel')">
+                        <div class="h-[68px]"></div>
+                        <script>
+                            for(let y=new Date().getFullYear(); y>=1950; y--) {
+                                document.write(`<div class='picker-item' data-val='${y}'>${y}</div>`);
+                            }
+                        </script>
+                        <div class="h-[68px]"></div>
+                    </div>
+                    <div class="absolute inset-0 picker-mask"></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // ⚙️ သင့်ရဲ့ Cloudflare Worker URL ကို ဒီမှာ ထည့်ပါ
+        const WORKER_URL = "https://muddy-band-2593.shineaung6375.workers.dev";
+
+        let currentStep = 1;
+        let tempEmail = "";
+        let generatedOtp = ""; // (Note: တကယ်ပို့တဲ့အခါ Server ဘက်က ပို့ပေးရပါမယ်၊ Frontend မှာ လက်ရှိ Session မရှိတဲ့အတွက် Worker API ကနေ စစ်ရပါမယ်)
+
+        function showAlert(message, type = 'error') {
+            const box = document.getElementById('alert_box');
+            const text = document.getElementById('alert_text');
+            box.classList.remove('hidden');
+            if(type === 'error') {
+                box.className = "bg-red-500/10 border border-red-500/20 p-4 rounded-2xl mb-5 text-center";
+                text.className = "text-red-400 text-xs font-bold";
+            } else {
+                box.className = "bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-2xl mb-5 text-center";
+                text.className = "text-emerald-400 text-xs font-bold";
+            }
+            text.innerText = message;
+        }
+
+        function goToStep(step) {
+            currentStep = step;
+            document.getElementById('step_1').classList.add('hidden');
+            document.getElementById('step_2').classList.add('hidden');
+            document.getElementById('step_3').classList.add('hidden');
+            document.getElementById('back_btn').classList.add('hidden');
+
+            if(step === 1) {
+                document.getElementById('step_1').classList.remove('hidden');
+            } else if(step === 2) {
+                document.getElementById('step_2').classList.remove('hidden');
+                document.getElementById('back_btn').classList.remove('hidden');
+            } else if(step === 3) {
+                document.getElementById('step_3').classList.remove('hidden');
+                document.getElementById('back_btn').classList.remove('hidden');
+            }
+        }
+
+        // STEP 1: Send OTP Request to Worker API
+        async function sendOtp() {
+            const email = document.getElementById('uemail').value.trim().toLowerCase();
+            if(!email) {
+                showAlert("ကျေးဇူးပြု၍ Email ထည့်သွင်းပါ။");
+                return;
+            }
+
+            try {
+                const response = await fetch(`${WORKER_URL}/api/send-otp`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                const res = await response.json();
+                if(res.success) {
+                    tempEmail = email;
+                    showAlert(res.message, 'success');
+                    goToStep(2);
+                } else {
+                    showAlert(res.message);
+                }
+            } catch(err) {
+                showAlert("ချိတ်ဆက်မှု အမှားအယွင်း ရှိနေပါသည်။");
+            }
+        }
+
+        // OTP Inputs Management
+        const inputs = document.querySelectorAll('#otp-container input');
+        inputs.forEach((input, index) => {
+            input.addEventListener('input', (e) => {
+                if (input.value.length > 1) input.value = input.value.slice(0, 1);
+                if (input.value !== "" && index < inputs.length - 1) inputs[index + 1].focus();
+                checkOtpComplete();
+            });
+            input.addEventListener('keydown', (e) => {
+                if (e.key === "Backspace" && input.value === "" && index > 0) inputs[index - 1].focus();
+            });
+        });
+
+        function checkOtpComplete() {
+            let code = "";
+            inputs.forEach(input => code += input.value);
+            if (code.length === 6) {
+                verifyOtp();
+            }
+        }
+
+        // STEP 2: Verify OTP
+        async function verifyOtp() {
+            let code = "";
+            inputs.forEach(input => code += input.value);
+            if(code.length < 6) {
+                showAlert("OTP ကုဒ် ၆ လုံး အပြည့်ထည့်ပါ။");
+                return;
+            }
+
+            try {
+                const response = await fetch(`${WORKER_URL}/api/verify-otp`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: tempEmail, otp: code })
+                });
+                const res = await response.json();
+                if(res.success) {
+                    goToStep(3);
+                } else {
+                    showAlert(res.message);
+                }
+            } catch(err) {
+                showAlert("စနစ်အမှားအယွင်း ဖြစ်သွားပါသည်။");
+            }
+        }
+
+        // STEP 3: Final Register
+        async function finalRegister() {
+            const fullName = document.getElementById('full_name').value.trim();
+            const username = document.getElementById('uname_input').value.trim().toLowerCase();
+            const dob = document.getElementById('final_dob').value;
+            const password = document.getElementById('password_input').value;
+            const cpassword = document.getElementById('cpassword_input').value;
+
+            if(!fullName || !username || !dob || !password) {
+                showAlert("အချက်အလက်များကို အကုန်ဖြည့်စွက်ပေးပါ။");
+                return;
+            }
+
+            try {
+                const response = await fetch(`${WORKER_URL}/api/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: tempEmail, fullName, username, dob, password, cpassword })
+                });
+                const res = await response.json();
+                if(res.success) {
+                    alert("အကောင့်ဖွင့်ခြင်း အောင်မြင်ပါသည်။");
+                    window.location.href = "index.html";
+                } else {
+                    showAlert(res.message);
+                }
+            } catch(err) {
+                showAlert("စာရင်းသွင်းရာတွင် အမှားအယွင်း ရှိနေပါသည်။");
+            }
+        }
+
+        // Password & Validation Helpers
+        function togglePasswordVisibility(inputId, btn) {
+            const input = document.getElementById(inputId);
+            if (input.type === "password") {
+                input.type = "text";
+            } else {
+                input.type = "password";
+            }
+        }
+
+        const passInput = document.getElementById('password_input');
+        const cpassInput = document.getElementById('cpassword_input');
+        const matchText = document.getElementById('password_match_text');
+        const submitBtnFinal = document.getElementById('final_submit_btn');
+
+        function checkPasswordsMatch() {
+            const pass = passInput.value;
+            const cpass = cpassInput.value;
+
+            if (pass.length < 8) {
+                matchText.innerText = "❌ စကားဝှက်သည် အနည်းဆုံး ၈ လုံး ရှိရပါမည်";
+                matchText.className = "text-[11px] font-bold mt-1.5 ml-2 text-red-400";
+                submitBtnFinal.setAttribute('disabled', 'true');
+                return;
+            }
+
+            if (cpass.length === 0) {
+                matchText.innerText = "";
+                submitBtnFinal.removeAttribute('disabled');
+                return;
+            }
+
+            if (pass === cpass) {
+                matchText.innerText = "✅ စကားဝှက်များ ကိုက်ညီပါသည်";
+                matchText.className = "text-[11px] font-bold mt-1.5 ml-2 text-emerald-400";
+                submitBtnFinal.removeAttribute('disabled');
+            } else {
+                matchText.innerText = "❌ စကားဝှက်များ မကိုက်ညီပါ";
+                matchText.className = "text-[11px] font-bold mt-1.5 ml-2 text-red-400";
+                submitBtnFinal.setAttribute('disabled', 'true');
+            }
+        }
+
+        passInput.addEventListener('input', checkPasswordsMatch);
+        cpassInput.addEventListener('input', checkPasswordsMatch);
+
+        // Wheel Picker Functions
+        function openPicker() {
+            const drawer = document.getElementById('pickerDrawer');
+            drawer.classList.remove('hidden');
+            setTimeout(() => {
+                drawer.classList.add('opacity-100');
+                drawer.querySelector('.transform').classList.remove('translate-y-full');
+                updateSelectedClass('monthWheel'); updateSelectedClass('dayWheel'); updateSelectedClass('yearWheel');
+            }, 50);
+        }
+        function closePicker() {
+            const drawer = document.getElementById('pickerDrawer');
+            drawer.classList.remove('opacity-100');
+            drawer.querySelector('.transform').classList.add('translate-y-full');
+            setTimeout(() => drawer.classList.add('hidden'), 300);
+        }
+        function handleWheelScroll(id) {
+            clearTimeout(window[id + 'Timer']);
+            window[id + 'Timer'] = setTimeout(() => updateSelectedClass(id), 100);
+        }
+        function updateSelectedClass(id) {
+            const container = document.getElementById(id);
+            const centerIndex = Math.round(container.scrollTop / 45);
+            container.querySelectorAll('.picker-item').forEach((item, idx) => {
+                if (idx === centerIndex) item.classList.add('selected'); else item.classList.remove('selected');
+            });
+        }
+        function confirmPicker() {
+            const m = document.getElementById('monthWheel').querySelector('.selected').getAttribute('data-val');
+            const d = document.getElementById('dayWheel').querySelector('.selected').getAttribute('data-val');
+            const y = document.getElementById('yearWheel').querySelector('.selected').getAttribute('data-val');
+            document.getElementById('dob_trigger').value = `${m}-${d}-${y}`; 
+            document.getElementById('final_dob').value = `${y}-${m}-${d}`; 
+            closePicker();
+        }
+    </script>
+</body>
+</html>
