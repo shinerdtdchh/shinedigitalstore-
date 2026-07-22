@@ -6,6 +6,7 @@
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
+
       gtag('config', 'G-1GYJ4VDKC0');
     </script>
 
@@ -109,11 +110,10 @@
         </div>
     </div>
 
-    <!-- Header Bar -->
+    <!-- Header -->
     <header class="fixed top-0 left-0 right-0 z-[1000] bg-[#050a15]/90 backdrop-blur-xl border-b border-white/5">
         <div class="max-w-md mx-auto p-3 flex justify-between items-center relative">
             
-            <!-- Logo Section -->
             <div class="flex items-center gap-1.5 flex-shrink-0"> 
                 <div class="logo-glow-container">
                     <div class="w-7 h-7 rounded-full overflow-hidden bg-slate-900 flex items-center justify-center border border-[#050a15]">
@@ -131,11 +131,10 @@
                 </div>
             </div>
 
-            <!-- Dynamic Auth Bar (အကောင့် ဝင်/မဝင် ပေါ်မူတည်၍ ပြောင်းလဲမည်) -->
-            <div id="auth-section" class="flex flex-col items-end gap-1 relative flex-shrink-0">
-                
-                <!-- 1. Logged In View (အကောင့်ဝင်ထားပါက ပြမည့် ဘား) -->
-                <div id="user-balance-bar" class="hidden flex-col items-end gap-1">
+            <!-- Dynamic Header Auth (JavaScript ဖြင့် ထိန်းချုပ်မည်) -->
+            <div id="header-auth-container">
+                <!-- Logged In View -->
+                <div id="user-balance-bar" class="hidden flex-col items-end gap-1 relative flex-shrink-0">
                     <div class="bg-blue-600/10 px-2 py-0.5 rounded-full border border-blue-500/20 flex items-center gap-1.5 select-none">
                         <div class="flex items-center gap-1 cursor-pointer" onclick="toggleDropdown(event)">
                             <span class="text-[10px] font-bold text-blue-400" id="balance-text">0 MMK</span>
@@ -164,19 +163,14 @@
                     </div>
                 </div>
 
-                <!-- 2. Logged Out View (အကောင့်မဝင်ရသေးပါက ပြမည့် Login ခလုတ်) -->
-                <a id="login-btn-header" href="profile.html" class="bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-bold text-[10px] px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg shadow-blue-500/20 active:scale-95 transition-all">
-                    <i class="fas fa-right-to-bracket text-[10px]"></i>
-                    <span>အကောင့်ဝင်ရန်</span>
-                </a>
-
+                <!-- Logged Out View -->
+                <a id="login-btn-header" href="profile.html" class="hidden text-[9px] font-black bg-blue-600 px-3 py-1 rounded-full uppercase transition-all">Login</a>
             </div>
         </div>
     </header>
 
     <div id="scroll-content" class="pt-16 pb-36">
 
-        <!-- Search Input -->
         <div class="max-w-md mx-auto px-4 mt-2">
             <form action="search.html" method="GET" class="relative group">
                 <input type="text" name="q" placeholder="Search services..." 
@@ -187,7 +181,6 @@
             </form>
         </div>
 
-        <!-- Banner Slider -->
         <div class="max-w-md mx-auto px-4 mt-4">
             <div class="swiper bannerSwiper rounded-[1.2rem] overflow-hidden border border-white/5">
                 <div class="swiper-wrapper">
@@ -199,7 +192,6 @@
             </div>
         </div>
 
-        <!-- Popular Services Section -->
         <div class="max-w-md mx-auto px-4 mt-6">
             <div class="flex items-center gap-2 mb-4">
                 <i class="fas fa-fire fire-icon text-md"></i>
@@ -323,40 +315,51 @@
         </div>
     </div>
 
-    <!-- Contact Floating Button -->
     <a href="contact.html" 
        class="fixed bottom-28 right-5 w-11 h-11 bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/40 z-[999] animate-pulse hover:scale-110 active:scale-95 transition-all border border-white/10 p-2.5">
         <i class="fas fa-user-astronaut text-lg text-white drop-shadow-[0_0_6px_rgba(255,255,255,0.8)]"></i>
     </a>
 
-    <!-- Bottom Navigation Bar -->
+    <!-- Dynamic Bottom Navigation Bar -->
     <div class="fixed bottom-5 left-0 right-0 z-[1000] flex justify-center items-center pointer-events-none">
         <nav class="w-[92%] max-w-sm glass rounded-[2.5rem] p-1.5 px-3 flex justify-between items-center shadow-2xl pointer-events-auto">
             <a href="index.html" class="flex flex-col items-center gap-0.5 py-1 group w-14">
                 <i class="fas fa-home text-md text-blue-500"></i>
                 <span class="text-[8px] font-bold text-blue-500 uppercase tracking-tighter">Home</span>
             </a>
-            <a href="post.html" class="flex flex-col items-center gap-0.5 py-1 group w-14">
-                <i class="fas fa-layer-group text-md text-slate-500 group-hover:text-white"></i>
-                <span class="text-[8px] font-bold text-slate-500 uppercase tracking-tighter group-hover:text-white">Posts</span>
-            </a>
-            <div class="relative -mt-6 flex justify-center items-center">
-                <a href="create_post.html" class="w-12 h-12 bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-400 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/50 border-4 border-[#050a15] hover:scale-110 active:scale-95 transition-transform">
-                    <i class="fas fa-plus text-md text-white"></i>
+
+            <!-- Logged In Nav Items -->
+            <div id="logged-in-nav" class="hidden flex justify-between items-center w-[75%]">
+                <a href="post.html" class="flex flex-col items-center gap-0.5 py-1 group w-14">
+                    <i class="fas fa-layer-group text-md text-slate-500 group-hover:text-white"></i>
+                    <span class="text-[8px] font-bold text-slate-500 uppercase tracking-tighter group-hover:text-white">Posts</span>
+                </a>
+                <div class="relative -mt-6 flex justify-center items-center">
+                    <a href="create_post.html" class="w-12 h-12 bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-400 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/50 border-4 border-[#050a15] hover:scale-110 active:scale-95 transition-transform">
+                        <i class="fas fa-plus text-md text-white"></i>
+                    </a>
+                </div>
+                <a href="chat.html" class="flex flex-col items-center gap-0.5 py-1 group w-14">
+                    <i class="fas fa-comment-dots text-md text-slate-500 group-hover:text-white"></i>
+                    <span class="text-[8px] font-bold text-slate-500 uppercase tracking-tighter group-hover:text-white">Chats</span>
+                </a>
+                <a href="profile.html" class="flex flex-col items-center gap-0.5 py-1 group w-14">
+                    <i class="fas fa-user-circle text-md text-slate-500 group-hover:text-white"></i>
+                    <span class="text-[8px] font-bold text-slate-500 uppercase tracking-tighter group-hover:text-white">Profile</span>
                 </a>
             </div>
-            <a href="chat.html" class="flex flex-col items-center gap-0.5 py-1 group w-14">
-                <i class="fas fa-comment-dots text-md text-slate-500 group-hover:text-white"></i>
-                <span class="text-[8px] font-bold text-slate-500 uppercase tracking-tighter group-hover:text-white">Chats</span>
-            </a>
-            <a href="profile.html" class="flex flex-col items-center gap-0.5 py-1 group w-14">
-                <i class="fas fa-user-circle text-md text-slate-500 group-hover:text-white"></i>
-                <span class="text-[8px] font-bold text-slate-500 uppercase tracking-tighter group-hover:text-white">Profile</span>
-            </a>
+
+            <!-- Logged Out Nav Item -->
+            <div id="logged-out-nav" class="hidden flex justify-around items-center w-[75%]">
+                <a href="profile.html" class="flex flex-col items-center gap-0.5 py-1 group w-14">
+                    <i class="fas fa-sign-in-alt text-md text-slate-500 group-hover:text-white"></i>
+                    <span class="text-[8px] font-bold text-slate-500 uppercase tracking-tighter group-hover:text-white">Login</span>
+                </a>
+            </div>
         </nav>
     </div>
 
-    <!-- Swiper JS & Logic Scripts -->
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script>
         var swiper = new Swiper(".bannerSwiper", {
@@ -366,24 +369,37 @@
         });
 
         let rates = { USDT: 1.00, THB: 35.50, SGD: 1.34, MYR: 4.45, KRW: 1350.00, JPY: 155.00, VND: 25000.00, INR: 83.50 };
-        let mmkPerUsd = 4500; 
+        const mmkPerUsd = 4500; 
         let balanceMMK = 0; 
         let totalCoins = 0;
 
-        // Check Login Session for Header UI Toggle
-        function checkAuthHeader() {
+        // Check Login Session for UI Display
+        function checkAuthSession() {
             const userId = localStorage.getItem("shine_chat_user_id");
+            
             const userBalanceBar = document.getElementById("user-balance-bar");
             const loginBtnHeader = document.getElementById("login-btn-header");
+            const loggedInNav = document.getElementById("logged-in-nav");
+            const loggedOutNav = document.getElementById("logged-out-nav");
 
             if (userId) {
+                // အကောင့်ဝင်ထားလျှင်
                 userBalanceBar.classList.remove("hidden");
                 userBalanceBar.classList.add("flex");
                 loginBtnHeader.classList.add("hidden");
+
+                loggedInNav.classList.remove("hidden");
+                loggedInNav.classList.add("flex");
+                loggedOutNav.classList.add("hidden");
             } else {
+                // အကောင့်မဝင်ရသေးလျှင် (Log Out လုပ်ထားလျှင်)
                 userBalanceBar.classList.add("hidden");
                 userBalanceBar.classList.remove("flex");
                 loginBtnHeader.classList.remove("hidden");
+
+                loggedInNav.classList.add("hidden");
+                loggedOutNav.classList.remove("hidden");
+                loggedOutNav.classList.add("flex");
             }
         }
 
@@ -444,7 +460,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            checkAuthHeader();
+            checkAuthSession();
             document.getElementById('coins-text').innerText = formatNumberShort(totalCoins) + ' C';
             fetchLiveRates();
         });
@@ -454,7 +470,7 @@
             document.getElementById('dropdown-arrow').style.transform = 'rotate(0deg)';
         });
 
-        // Pull-to-refresh Logic
+        // Pull to refresh
         let startY = 0; let currentY = 0; let isPulling = false;
         const ptrLoading = document.getElementById('ptr-loading');
         const scrollContent = document.getElementById('scroll-content');
@@ -492,4 +508,4 @@
         });
     </script>
 </body>
-    </html>
+</html>
