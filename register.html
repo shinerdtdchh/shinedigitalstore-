@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register - Shine Digital</title>
+    <title>Register - Shine Digital store</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
@@ -65,7 +65,7 @@
                 </button>
 
                 <div class="mt-5 pt-3 border-t border-slate-900">
-                    <button onclick="resendOtp()" id="resendBtn" class="text-[11px] text-blue-500 font-bold hover:underline uppercase tracking-wider cursor-pointer">
+                    <button onclick="sendOtp()" id="resendBtn" class="text-[11px] text-blue-500 font-bold hover:underline uppercase tracking-wider cursor-pointer">
                         🔄 Code ပြန်ပို့ရန် (Resend OTP)
                     </button>
                 </div>
@@ -96,7 +96,7 @@
                 <label class="text-[10px] text-slate-500 font-bold ml-2 uppercase tracking-wider">Password</label>
                 <div class="relative mt-1">
                     <input type="password" id="password_input" placeholder="••••••••" class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 pr-12 text-sm outline-none focus:border-blue-500/80 transition-all" required>
-                    <button type="button" onclick="togglePasswordVisibility('password_input', this)" class="absolute right-4 top-4 text-slate-500 hover:text-slate-300 transition-colors cursor-pointer">
+                    <button type="button" onclick="togglePasswordVisibility('password_input')" class="absolute right-4 top-4 text-slate-500 hover:text-slate-300 transition-colors cursor-pointer">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.644r26.27A11.952 11.952 0 0012 20.3c3.41 0 6.51-1.422 8.77-3.707m0 0A11.95 11.95 0 0112 2.944a11.944 11.944 0 01-8.77 3.707M19.5 12a7.5 7.5 0 11-15 0 7.5 7.5 0 0115 0z" /></svg>
                     </button>
                 </div>
@@ -106,7 +106,7 @@
                 <label class="text-[10px] text-slate-500 font-bold ml-2 uppercase tracking-wider">Confirm Password</label>
                 <div class="relative mt-1">
                     <input type="password" id="cpassword_input" placeholder="••••••••" class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 pr-12 text-sm outline-none focus:border-blue-500/80 transition-all" required>
-                    <button type="button" onclick="togglePasswordVisibility('cpassword_input', this)" class="absolute right-4 top-4 text-slate-500 hover:text-slate-300 transition-colors cursor-pointer">
+                    <button type="button" onclick="togglePasswordVisibility('cpassword_input')" class="absolute right-4 top-4 text-slate-500 hover:text-slate-300 transition-colors cursor-pointer">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.644r26.27A11.952 11.952 0 0012 20.3c3.41 0 6.51-1.422 8.77-3.707m0 0A11.95 11.95 0 0112 2.944a11.944 11.944 0 01-8.77 3.707M19.5 12a7.5 7.5 0 11-15 0 7.5 7.5 0 0115 0z" /></svg>
                     </button>
                 </div>
@@ -173,12 +173,11 @@
     </div>
 
     <script>
-        // ⚙️ သင့်ရဲ့ Cloudflare Worker URL ကို ဒီမှာ ထည့်ပါ
-        const WORKER_URL = "https://muddy-band-2593.shineaung6375.workers.dev";
+        // API Endpoint (Cloudflare Pages Functions ဖြစ်သောကြောင့် /api/db သို့မဟုတ် သက်ဆိုင်ရာ လမ်းကြောင်းကို သုံးပါ)
+        const API_URL = "/api/db";
 
         let currentStep = 1;
         let tempEmail = "";
-        let generatedOtp = ""; // (Note: တကယ်ပို့တဲ့အခါ Server ဘက်က ပို့ပေးရပါမယ်၊ Frontend မှာ လက်ရှိ Session မရှိတဲ့အတွက် Worker API ကနေ စစ်ရပါမယ်)
 
         function showAlert(message, type = 'error') {
             const box = document.getElementById('alert_box');
@@ -212,7 +211,7 @@
             }
         }
 
-        // STEP 1: Send OTP Request to Worker API
+        // STEP 1: Send OTP
         async function sendOtp() {
             const email = document.getElementById('uemail').value.trim().toLowerCase();
             if(!email) {
@@ -221,10 +220,10 @@
             }
 
             try {
-                const response = await fetch(`${WORKER_URL}/api/send-otp`, {
+                const response = await fetch(API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email })
+                    body: JSON.stringify({ action: 'send-otp', email })
                 });
                 const res = await response.json();
                 if(res.success) {
@@ -270,10 +269,10 @@
             }
 
             try {
-                const response = await fetch(`${WORKER_URL}/api/verify-otp`, {
+                const response = await fetch(API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: tempEmail, otp: code })
+                    body: JSON.stringify({ action: 'verify-otp', email: tempEmail, otp: code })
                 });
                 const res = await response.json();
                 if(res.success) {
@@ -300,10 +299,10 @@
             }
 
             try {
-                const response = await fetch(`${WORKER_URL}/api/register`, {
+                const response = await fetch(API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: tempEmail, fullName, username, dob, password, cpassword })
+                    body: JSON.stringify({ action: 'register', email: tempEmail, fullName, username, dob, password, cpassword })
                 });
                 const res = await response.json();
                 if(res.success) {
@@ -318,13 +317,9 @@
         }
 
         // Password & Validation Helpers
-        function togglePasswordVisibility(inputId, btn) {
+        function togglePasswordVisibility(inputId) {
             const input = document.getElementById(inputId);
-            if (input.type === "password") {
-                input.type = "text";
-            } else {
-                input.type = "password";
-            }
+            input.type = input.type === "password" ? "text" : "password";
         }
 
         const passInput = document.getElementById('password_input');
