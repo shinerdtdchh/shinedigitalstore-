@@ -1,7 +1,7 @@
 export default {
     async fetch(request, env, ctx) {
         const url = new URL(request.url);
-        const db = env.DB; // D1 Database binding (`shine-d`)
+        const db = env.DB;
 
         const corsHeaders = {
             "Content-Type": "application/json",
@@ -30,6 +30,22 @@ export default {
                 if (!email) {
                     return new Response(JSON.stringify({ success: false, message: "ကျေးဇူးပြု၍ Email ထည့်သွင်းပါ။" }), { headers: corsHeaders });
                 }
+
+                // users table ရှိမရှိ နဲ့ email ရှိပြီးသားလား စစ်ရန်
+                await db.prepare(`
+                    CREATE TABLE IF NOT EXISTS users (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        username TEXT UNIQUE,
+                        email TEXT UNIQUE,
+                        fullname TEXT,
+                        dob TEXT,
+                        password TEXT,
+                        balance REAL DEFAULT 0,
+                        coins INTEGER DEFAULT 0,
+                        role TEXT DEFAULT 'user',
+                        status TEXT DEFAULT 'active'
+                    )
+                `).run();
 
                 const existing = await db.prepare("SELECT email FROM users WHERE LOWER(email) = ? LIMIT 1").bind(email).first();
                 if (existing) {
