@@ -1,5 +1,5 @@
 name = "shinedigitalstore-worker"
-main = "db.js"  *(သို့မဟုတ် ကိုယ့်ရဲ့ ကုဒ်ဖိုင်ရှိရာ လမ်းကြောင်း ဥပမာ - src/index.js)*
+main = "db.js"
 compatibility_date = "2026-07-24"
 
 [[d1_databases]]
