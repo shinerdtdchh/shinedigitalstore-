@@ -1,0 +1,7 @@
+name = "shinedigitalstore-worker"
+compatibility_date = "2026-07-24"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "shine-d"
+database_id = "9344315c-4784-461d-b435-de1f3fe0f6dc"
